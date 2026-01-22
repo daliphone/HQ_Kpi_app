@@ -14,27 +14,28 @@ st.set_page_config(
 # --- 2. CSS 美化 ---
 st.markdown("""
 <style>
-    /* 區塊標題樣式 */
+    /* 區塊標題 */
     .header-a { background-color: #E3F2FD; padding: 10px; border-radius: 5px; color: #1565C0; font-weight: bold; margin-bottom: 5px; border: 1px solid #BBDEFB; }
     .header-b { background-color: #E8F5E9; padding: 10px; border-radius: 5px; color: #2E7D32; font-weight: bold; margin-bottom: 5px; border: 1px solid #C8E6C9; }
     .header-c { background-color: #FFF3E0; padding: 10px; border-radius: 5px; color: #E65100; font-weight: bold; margin-bottom: 5px; border: 1px solid #FFE0B2; }
-    
-    /* 中欄標題 */
     .header-mid-a { background-color: #5E35B1; padding: 10px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 5px; }
     .header-mid-b { background-color: #00695C; padding: 10px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 5px; }
     
-    /* 結果顯示 */
-    .result-box { background-color: #FAFAFA; padding: 15px; border-radius: 5px; color: #333; font-size: 20px; font-weight: bold; text-align: center; border: 1px solid #ddd; margin-bottom: 10px; }
-    .grade-badge { font-size: 18px; font-weight: bold; padding: 5px 12px; border-radius: 15px; color: white; display: inline-block; margin-bottom: 5px;}
+    /* 獎金區塊 (右欄上方) */
+    .bonus-box { background-color: #FFF8E1; padding: 15px; border-radius: 10px; border: 2px solid #FBC02D; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    
+    /* 分數結果 */
+    .result-box { background-color: #FAFAFA; padding: 10px; border-radius: 5px; color: #333; font-size: 20px; font-weight: bold; text-align: center; border: 1px solid #ddd; margin-top: 10px; }
+    .grade-badge { font-size: 20px; font-weight: bold; padding: 5px 15px; border-radius: 20px; color: white; display: inline-block; margin: 10px 0;}
     
     /* Footer */
-    .footer { text-align: center; color: #888; font-size: 12px; }
+    .footer { text-align: center; color: #888; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 初始化資料 (包含預設獎金級距) ---
+# --- 3. 初始化資料 ---
 if 'bonus_rules' not in st.session_state:
-    # 預設級距邏輯 (可被修改)
+    # 預設級距邏輯 (全職務通用)
     st.session_state.bonus_rules = [
         {"grade": "S (特優)", "min_score": 90, "months": 1.5, "color": "#D32F2F"},
         {"grade": "A (優良)", "min_score": 80, "months": 1.0, "color": "#1976D2"},
@@ -151,43 +152,33 @@ for d in ["會計", "人資", "行銷"]:
 if 'batch_queue' not in st.session_state:
     st.session_state.batch_queue = []
 
-# 用來暫存「已計算但未加入清單」的評分結果
 if 'calculated_score_data' not in st.session_state:
     st.session_state.calculated_score_data = None
 
 JOB_LEVELS = ["助理", "專員", "資深專員", "組長", "副理", "經理", "總監"]
 DEPT_LIST = list(st.session_state.config_data.keys())
 
-# --- 4. 核心邏輯：動態獎金計算 ---
+# --- 4. 核心邏輯 ---
 def calculate_dynamic_bonus(score, rules_data):
-    """
-    根據 rules_data (List of Dict) 動態計算獎金
-    """
-    # 1. 將規則按分數由高到低排序，確保邏輯正確
-    # 假設使用者輸入順序不一，我們必須先排序
     sorted_rules = sorted(rules_data, key=lambda x: x['min_score'], reverse=True)
-    
-    # 2. 比對分數
     for rule in sorted_rules:
         if score >= rule['min_score']:
             return rule['grade'], rule['months'], rule['color']
-    
-    # 若低於所有設定 (理論上最後一個應為0分)，回傳預設
     return "N/A", 0.0, "#000000"
 
 # --- 5. 主標題 ---
 st.title("📊 總管理處人員評核系統")
 
-# --- 6. 版面佈局 (三欄式) ---
-col_left, col_mid, col_right = st.columns([1.2, 1, 0.8], gap="medium")
+# --- 6. 版面佈局 (三欄位調整) ---
+# 左(1.1) | 中(1.0) | 右(0.9) - 讓右邊稍微寬一點放獎金
+col_left, col_mid, col_right = st.columns([1.1, 1.0, 0.9], gap="medium")
 
 # ==========================================
-# 左欄：評分與計算
+# 左欄：1. 評分與計算 (輸入 + 計算總分)
 # ==========================================
 with col_left:
     st.markdown("### 1. 評分與計算")
     
-    # 1.1 人員資料 Form
     with st.container(border=True):
         st.markdown("#### 👤 人員資料")
         c1, c2 = st.columns(2)
@@ -202,7 +193,6 @@ with col_left:
     current_config = st.session_state.config_data[input_dept]
     wa, wb, wc = current_config['section_weights']
 
-    # 1.2 評分表單
     with st.form("score_form"):
         st.markdown(f'<div class="header-a">A. 職務基本標準 (權重 {int(wa*100)}%)</div>', unsafe_allow_html=True)
         scores_a = []
@@ -228,8 +218,9 @@ with col_left:
             mgr_comment = st.text_area("反饋評語", height=38, placeholder="請輸入評語...")
 
         st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("📊 計算評核總分", use_container_width=True, type="primary")
+        submitted = st.form_submit_button("📊 計算評核總分 (Step 1)", use_container_width=True, type="primary")
 
+    # 處理提交，只更新狀態，不顯示獎金
     if submitted:
         total_a = sum(scores_a)
         total_b = sum(scores_b)
@@ -243,80 +234,10 @@ with col_left:
                 "date": str(input_date), "level": input_level, "comment": mgr_comment
             }
         }
-
-    # 1.4 獨立區塊：年終獎金試算 (UI 更新：移除淡黃色方塊，改用原生 Container)
-    st.markdown("<br>", unsafe_allow_html=True) # 間距
-    
-    # 使用 container 包裹，加上標題
-    with st.container(border=True):
-        st.markdown("#### 💰 年終獎金試算 (級距制)")
-        
-        # 顯示簡易規則提示
-        rules_hint = " | ".join([f"{r['grade']}: {r['months']}月" for r in sorted(st.session_state.bonus_rules, key=lambda x:x['min_score'], reverse=True)[:4]])
-        st.caption(f"目前規則：{rules_hint} ... (詳見設定)")
-
-        if st.session_state.calculated_score_data:
-            current_score = st.session_state.calculated_score_data["score"]
-            
-            # 顯示總分
-            st.markdown(f'<div class="result-box">目前總分：{current_score:.2f}</div>', unsafe_allow_html=True)
-            
-            # 使用動態規則計算
-            grade_text, grade_months, grade_color = calculate_dynamic_bonus(current_score, st.session_state.bonus_rules)
-            
-            c_res1, c_res2 = st.columns(2)
-            with c_res1:
-                st.markdown(f"**評定等級**")
-                st.markdown(f'<div style="background-color:{grade_color};" class="grade-badge">{grade_text}</div>', unsafe_allow_html=True)
-            with c_res2:
-                st.metric("建議核定月數", f"{grade_months} 個月")
-
-            st.divider()
-            
-            # 試算輸入
-            col_b1, col_b2 = st.columns(2)
-            with col_b1:
-                bonus_base = st.number_input("月薪 (Base)", value=0, step=1000, help="輸入員工月薪以計算金額")
-            with col_b2:
-                bonus_multi = st.number_input("額外倍率", value=1.0, step=0.1, help="特殊加權使用")
-
-            final_bonus = bonus_base * grade_months * bonus_multi
-            
-            st.info(f"💵 計算結果：${int(final_bonus):,}")
-            
-            # 確認加入
-            st.markdown("##### 確認並存檔")
-            final_confirm_bonus = st.number_input("最終實發金額 (可手動修正)", value=int(final_bonus), step=100)
-            
-            if st.button("➕ 加入待匯出清單", use_container_width=True):
-                meta = st.session_state.calculated_score_data["meta"]
-                
-                text_data = {}
-                try:
-                    for row in current_config['text_a']:
-                        key = f"txt_a_{row['title']}"
-                        if key in st.session_state: text_data[f"A_{row['title']}"] = st.session_state[key]
-                    for row in current_config['text_b']:
-                        key = f"txt_b_{row['title']}"
-                        if key in st.session_state: text_data[f"B_{row['title']}"] = st.session_state[key]
-                except: pass
-
-                full_data = {
-                    "評分日期": meta["date"], "評分主管": meta["supervisor"], "受評姓名": meta["name"],
-                    "職等": meta["level"], "部門": meta["dept"], "總分": f"{current_score:.2f}",
-                    "評等": grade_text, "核定月數": str(grade_months), "實得獎金": final_confirm_bonus,
-                    "主管評語": meta["comment"],
-                    **text_data
-                }
-                
-                st.session_state.batch_queue.append(full_data)
-                st.toast(f"✅ 已加入 {meta['name']} 的資料！")
-                
-        else:
-            st.warning("👉 請先填寫上方評分並點擊「計算評核總分」")
+        st.success(f"總分已計算：{final_score:.2f}，請至右側進行獎金試算。")
 
 # ==========================================
-# 中欄：職務目標
+# 中欄：2. 每月職務目標 (純文字)
 # ==========================================
 with col_mid:
     st.markdown("### 2. 每月職務目標")
@@ -330,67 +251,130 @@ with col_mid:
         st.text_area(f"● {row['title']}", value=row['content'], height=100, key=f"txt_b_{row['title']}")
 
 # ==========================================
-# 右欄：參數設定與匯出
+# 右欄：3. 獎金試算 (上) & 4. 設定匯出 (下)
 # ==========================================
 with col_right:
-    st.markdown("### 3. 設定與匯出")
+    # --- 3. 獎金試算區 (獨立區塊，置頂) ---
+    st.markdown("### 3. 年終獎金試算")
+    
+    with st.container(border=True): # 使用原生 Container，乾淨無破圖
+        st.markdown("##### 💰 級距制計算機")
+        
+        if st.session_state.calculated_score_data:
+            current_score = st.session_state.calculated_score_data["score"]
+            meta_name = st.session_state.calculated_score_data["meta"]["name"]
+            
+            # 顯示總分
+            st.markdown(f'<div class="result-box">受評人：{meta_name}<br>總分：{current_score:.2f}</div>', unsafe_allow_html=True)
+            
+            # 級距運算
+            grade_text, grade_months, grade_color = calculate_dynamic_bonus(current_score, st.session_state.bonus_rules)
+            
+            # 視覺化 Badge
+            st.markdown(f"""
+            <div style="text-align: center;">
+                <span class="grade-badge" style="background-color: {grade_color};">{grade_text}</span>
+                <span style="font-size: 18px; font-weight: bold; color: #555; margin-left: 10px;">核定: {grade_months} 個月</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.divider()
+            
+            # 金額試算 (互動區)
+            c_b1, c_b2 = st.columns([2, 1])
+            with c_b1:
+                bonus_base = st.number_input("月薪 (Base)", value=0, step=1000, key="calc_base")
+            with c_b2:
+                bonus_multi = st.number_input("倍率", value=1.0, step=0.1, key="calc_multi")
+            
+            final_bonus = bonus_base * grade_months * bonus_multi
+            
+            if bonus_base > 0:
+                st.info(f"💵 計算結果：${int(final_bonus):,}")
+            else:
+                st.caption("請輸入月薪以計算金額")
+
+            # 加入清單動作
+            st.markdown("---")
+            final_confirm_bonus = st.number_input("最終實發 (可手動修正)", value=int(final_bonus), step=100, key="calc_final")
+            
+            if st.button("➕ 加入待匯出清單 (Step 2)", type="secondary", use_container_width=True):
+                meta = st.session_state.calculated_score_data["meta"]
+                
+                # 抓取中欄
+                text_data = {}
+                try:
+                    for row in current_config['text_a']:
+                        k = f"txt_a_{row['title']}"
+                        if k in st.session_state: text_data[f"A_{row['title']}"] = st.session_state[k]
+                    for row in current_config['text_b']:
+                        k = f"txt_b_{row['title']}"
+                        if k in st.session_state: text_data[f"B_{row['title']}"] = st.session_state[k]
+                except: pass
+
+                full_data = {
+                    "評分日期": meta["date"], "評分主管": meta["supervisor"], "受評姓名": meta["name"],
+                    "職等": meta["level"], "部門": meta["dept"], "總分": f"{current_score:.2f}",
+                    "評等": grade_text, "核定月數": str(grade_months), "實得獎金": final_confirm_bonus,
+                    "主管評語": meta["comment"],
+                    **text_data
+                }
+                
+                st.session_state.batch_queue.append(full_data)
+                st.toast(f"✅ 已將 {meta['name']} 加入清單！", icon="🎉")
+        
+        else:
+            st.info("👈 請先在左側完成評分計算")
+            st.caption("完成後，此處將自動顯示等級與獎金試算。")
+
+    # --- 4. 設定與匯出 (下方) ---
+    st.markdown("### 4. 設定與匯出")
     
     tab1, tab2 = st.tabs(["⚙️ 參數設定", "📥 匯出清單"])
 
     with tab1:
-        st.info("💡 修改表格後請按 Enter 套用")
-        edit_dept = st.selectbox("選擇要編輯的部門", options=DEPT_LIST)
-        edit_config = st.session_state.config_data[edit_dept]
-
-        with st.expander("1. 權重設定 (ABC區)", expanded=False):
-            col_w1, col_w2, col_w3 = st.columns(3)
-            new_wa = col_w1.number_input("A區權重", value=edit_config['section_weights'][0], step=0.05, key="w_a")
-            new_wb = col_w2.number_input("B區權重", value=edit_config['section_weights'][1], step=0.05, key="w_b")
-            new_wc = col_w3.number_input("C區權重", value=edit_config['section_weights'][2], step=0.05, key="w_c")
-            st.session_state.config_data[edit_dept]['section_weights'] = [new_wa, new_wb, new_wc]
-
-        with st.expander("2. 評分細項設定", expanded=False):
-            st.caption("A區：職務基本標準")
-            df_basic = pd.DataFrame(edit_config['basic'])
-            edited_basic = st.data_editor(df_basic, num_rows="dynamic", key="editor_basic")
-            st.session_state.config_data[edit_dept]['basic'] = edited_basic.to_dict('records')
-
-            st.caption("B區：卓越主動表現")
-            df_excellent = pd.DataFrame(edit_config['excellent'])
-            edited_excellent = st.data_editor(df_excellent, num_rows="dynamic", key="editor_excellent")
-            st.session_state.config_data[edit_dept]['excellent'] = edited_excellent.to_dict('records')
-
-        with st.expander("3. 職務目標預設值", expanded=False):
-            st.caption("A區文字模板")
-            df_text_a = pd.DataFrame(edit_config['text_a'])
-            edited_text_a = st.data_editor(df_text_a, num_rows="dynamic", key="editor_text_a")
-            st.session_state.config_data[edit_dept]['text_a'] = edited_text_a.to_dict('records')
-
-            st.caption("B區文字模板")
-            df_text_b = pd.DataFrame(edit_config['text_b'])
-            edited_text_b = st.data_editor(df_text_b, num_rows="dynamic", key="editor_text_b")
-            st.session_state.config_data[edit_dept]['text_b'] = edited_text_b.to_dict('records')
+        st.caption("提示：此處設定為全域通用，修改後請按 Enter")
         
-        # 新增：獎金級距設定
-        with st.expander("4. 年終獎金級距設定", expanded=True):
-            st.caption("設定分數區間與對應月數 (請按分數高低排列以利閱讀)")
-            # 將目前的規則轉為 DF 供編輯
+        with st.expander("年終獎金級距設定 (全職務)", expanded=True):
+            st.caption("設定分數區間與對應月數")
+            # 修正：移除 ColorPickerColumn，改用 TextColumn 防止舊版 Streamlit 崩潰
+            # 使用者可直接輸入色碼 (如 #FF0000)
             df_bonus = pd.DataFrame(st.session_state.bonus_rules)
-            # 欄位設定：顏色選擇器
+            
             edited_bonus_rules = st.data_editor(
                 df_bonus, 
                 num_rows="dynamic",
                 column_config={
-                    "color": st.column_config.ColorPickerColumn("標籤顏色"),
-                    "min_score": st.column_config.NumberColumn("最低分數門檻", min_value=0, max_value=100),
-                    "months": st.column_config.NumberColumn("核定月數", step=0.1)
+                    "grade": st.column_config.TextColumn("等級名稱", required=True),
+                    "min_score": st.column_config.NumberColumn("最低分", min_value=0, max_value=100),
+                    "months": st.column_config.NumberColumn("月數", step=0.1),
+                    "color": st.column_config.TextColumn("標籤顏色 (Hex碼)", help="例如 #FF0000")
                 },
                 key="editor_bonus"
             )
-            # 存回
             st.session_state.bonus_rules = edited_bonus_rules.to_dict('records')
 
-        if st.button("🔄 重整頁面以套用新設定"):
+        with st.expander("部門評分權重 & 項目", expanded=False):
+            edit_dept = st.selectbox("選擇部門", options=DEPT_LIST)
+            edit_config = st.session_state.config_data[edit_dept]
+            
+            c_w1, c_w2, c_w3 = st.columns(3)
+            nw_a = c_w1.number_input("A區權重", value=edit_config['section_weights'][0], step=0.05)
+            nw_b = c_w2.number_input("B區權重", value=edit_config['section_weights'][1], step=0.05)
+            nw_c = c_w3.number_input("C區權重", value=edit_config['section_weights'][2], step=0.05)
+            st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
+            
+            st.caption("A區細項")
+            df_b = pd.DataFrame(edit_config['basic'])
+            ed_b = st.data_editor(df_b, num_rows="dynamic", key="ed_b")
+            st.session_state.config_data[edit_dept]['basic'] = ed_b.to_dict('records')
+            
+            st.caption("B區細項")
+            df_e = pd.DataFrame(edit_config['excellent'])
+            ed_e = st.data_editor(df_e, num_rows="dynamic", key="ed_e")
+            st.session_state.config_data[edit_dept]['excellent'] = ed_e.to_dict('records')
+
+        if st.button("🔄 重整套用"):
             st.rerun()
 
     with tab2:
@@ -399,31 +383,23 @@ with col_right:
             st.dataframe(df_export, hide_index=True)
             
             csv = df_export.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 下載 CSV", data=csv, file_name=f"KPI_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
-            st.download_button(
-                label="📥 下載 CSV 檔案",
-                data=csv,
-                file_name=f"KPI_Report_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv",
-                type="primary",
-                use_container_width=True
-            )
-            
-            if st.button("🗑️ 清空所有資料", use_container_width=True):
+            if st.button("🗑️ 清空"):
                 st.session_state.batch_queue = []
                 st.rerun()
         else:
-            st.info("📭 目前清單是空的")
+            st.info("尚無資料")
 
-# --- 7. 系統資訊 (Footer - 預設閉合) ---
+# --- 7. 系統資訊 (Footer) ---
 with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     st.markdown("""
-    <div style="text-align: center; color: #666;">
+    <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
-            <li>v24.0: 新增系統資訊區塊、獎金試算區獨立與美化、移除版本標題。</li>
+            <li>v25.1: 修復舊版 Streamlit 相容性問題，優化獎金區塊位置。</li>
+            <li>v24.0: 獎金區塊獨立化，新增版本資訊。</li>
             <li>v23.0: 獎金邏輯升級為精細級距 (B+/B-)。</li>
-            <li>v21.0: 網頁版架構重構，支援動態參數設定。</li>
         </ul>
         <br><br>
         <p>© 2026 馬尼通訊總管理處考核系統</p>
