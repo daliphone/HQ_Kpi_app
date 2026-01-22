@@ -33,7 +33,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 初始化資料 ---
+# --- 3. 核心功能：即時存檔回調函數 (Callback) ---
+def update_target_content(dept, section, idx, key):
+    """
+    當使用者修改職務目標文字時，此函數會立即將內容寫入 session_state.config_data
+    確保切換部門後資料不遺失。
+    """
+    new_value = st.session_state[key]
+    st.session_state.config_data[dept][section][idx]['content'] = new_value
+
+# --- 4. 初始化資料 ---
 if 'bonus_rules' not in st.session_state:
     st.session_state.bonus_rules = [
         {"grade": "S (特優)", "min_score": 90, "months": 1.5, "color": "#D32F2F"},
@@ -45,7 +54,7 @@ if 'bonus_rules' not in st.session_state:
     ]
 
 if 'config_data' not in st.session_state:
-    # 定義通用模板 (修正資料結構為 dict，解決 TypeError)
+    # 定義通用模板
     GENERAL_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
@@ -60,8 +69,8 @@ if 'config_data' not in st.session_state:
             {"item": "個人優點與貢獻", "weight": 0.34}
         ],
         "threshold": 80,
-        "text_a": [{"title": "本月職務重點", "content": "請輸入內容..."}], # 修正為 dict
-        "text_b": [{"title": "工作品質", "content": "請輸入內容..."}]      # 修正為 dict
+        "text_a": [{"title": "本月職務重點", "content": "請輸入內容..."}], 
+        "text_b": [{"title": "工作品質", "content": "請輸入內容..."}]
     }
 
     st.session_state.config_data = {
@@ -145,7 +154,7 @@ if 'config_data' not in st.session_state:
             ]
         }
     }
-    # 自動套用通用模板給其他部門 (不顯示 "通用" 選項)
+    # 自動套用通用模板給其他部門
     for d in ["會計", "人資", "行銷"]:
         st.session_state.config_data[d] = GENERAL_TEMPLATE
 
@@ -158,7 +167,7 @@ if 'calculated_score_data' not in st.session_state:
 JOB_LEVELS = ["助理", "專員", "資深專員", "組長", "副理", "經理", "總監"]
 DEPT_LIST = list(st.session_state.config_data.keys())
 
-# --- 4. 核心邏輯 ---
+# --- 5. 核心邏輯：動態獎金計算 ---
 def calculate_dynamic_bonus(score, rules_data):
     sorted_rules = sorted(rules_data, key=lambda x: x['min_score'], reverse=True)
     for rule in sorted_rules:
@@ -166,10 +175,10 @@ def calculate_dynamic_bonus(score, rules_data):
             return rule['grade'], rule['months'], rule['color']
     return "N/A", 0.0, "#000000"
 
-# --- 5. 主標題 ---
+# --- 6. 主標題 ---
 st.title("📊 總管理處人員評核系統")
 
-# --- 6. 版面佈局 ---
+# --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
 
 # ==========================================
@@ -195,14 +204,34 @@ with col_left:
     
     st.markdown("### 2. 職務目標參考")
     
-    with st.expander("📝 每月職務目標 (點擊展開)", expanded=False):
+    # 預設閉合
+    with st.expander("📝 每月職務目標 (可編輯/自動存檔)", expanded=False):
         st.markdown('<div class="header-mid-a">A. 職務內容與目標</div>', unsafe_allow_html=True)
-        for row in current_config['text_a']:
-            st.text_area(f"● {row['title']}", value=row['content'], height=80, key=f"txt_a_{row['title']}")
+        # 使用 enumerate 取得索引，確保更新正確的 list item
+        for i, row in enumerate(current_config['text_a']):
+            # 產生唯一的 key，包含部門、區塊、索引，避免衝突
+            unique_key = f"target_a_{input_dept}_{i}"
+            st.text_area(
+                f"● {row['title']}", 
+                value=row['content'], 
+                height=80, 
+                key=unique_key,
+                # 綁定即時存檔回調函數
+                on_change=update_target_content,
+                args=(input_dept, 'text_a', i, unique_key)
+            )
 
         st.markdown('<div class="header-mid-b">B. 內在品質與工作環境</div>', unsafe_allow_html=True)
-        for row in current_config['text_b']:
-            st.text_area(f"● {row['title']}", value=row['content'], height=80, key=f"txt_b_{row['title']}")
+        for i, row in enumerate(current_config['text_b']):
+            unique_key = f"target_b_{input_dept}_{i}"
+            st.text_area(
+                f"● {row['title']}", 
+                value=row['content'], 
+                height=80, 
+                key=unique_key,
+                on_change=update_target_content,
+                args=(input_dept, 'text_b', i, unique_key)
+            )
 
 # ==========================================
 # 中欄：3. 評分內容
@@ -302,14 +331,26 @@ with col_right:
             
             if st.button("➕ 加入待匯出清單", type="secondary", use_container_width=True):
                 meta = st.session_state.calculated_score_data["meta"]
+                
+                # 抓取中欄(現在在左欄)的即時資料
+                # 注意：因為現在支援即時存檔，我們可以從 config_data 直接讀取最新的值
+                # 或者直接從 session_state 的 key 讀取
                 text_data = {}
                 try:
-                    for row in current_config['text_a']:
-                        k = f"txt_a_{row['title']}"
-                        if k in st.session_state: text_data[f"A_{row['title']}"] = st.session_state[k]
-                    for row in current_config['text_b']:
-                        k = f"txt_b_{row['title']}"
-                        if k in st.session_state: text_data[f"B_{row['title']}"] = st.session_state[k]
+                    for i, row in enumerate(current_config['text_a']):
+                        # 使用與生成時相同的 key 規則
+                        k = f"target_a_{input_dept}_{i}"
+                        if k in st.session_state: 
+                            text_data[f"A_{row['title']}"] = st.session_state[k]
+                        else:
+                            text_data[f"A_{row['title']}"] = row['content'] # Fallback
+
+                    for i, row in enumerate(current_config['text_b']):
+                        k = f"target_b_{input_dept}_{i}"
+                        if k in st.session_state: 
+                            text_data[f"B_{row['title']}"] = st.session_state[k]
+                        else:
+                            text_data[f"B_{row['title']}"] = row['content']
                 except: pass
 
                 full_data = {
@@ -383,15 +424,15 @@ with col_right:
         else:
             st.info("尚無資料")
 
-# --- 7. 系統資訊 (Footer) ---
+# --- 7. 系統資訊 (Footer - 預設閉合) ---
 with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
-            <li>v26.1: 修復通用部門設定 Bug，優化資料結構。</li>
-            <li>v26.0: 版面重心調整，職務目標移至左欄，評分置中。</li>
-            <li>v25.1: 修復舊版 Streamlit 相容性問題。</li>
+            <li>v27.0: 新增職務目標即時存檔功能，解決切換部門資料遺失問題。</li>
+            <li>v26.1: 修復通用部門設定 Bug。</li>
+            <li>v26.0: 版面重心調整。</li>
         </ul>
         <br><br>
         <p>© 2026 馬尼通訊總管理處考核系統</p>
