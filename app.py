@@ -45,6 +45,25 @@ if 'bonus_rules' not in st.session_state:
     ]
 
 if 'config_data' not in st.session_state:
+    # 定義通用模板 (修正資料結構為 dict，解決 TypeError)
+    GENERAL_TEMPLATE = {
+        "section_weights": [0.50, 0.30, 0.20],
+        "basic": [
+            {"item": "KPI_1", "weight": 0.25},
+            {"item": "KPI_2", "weight": 0.25},
+            {"item": "KPI_3", "weight": 0.25},
+            {"item": "KPI_4", "weight": 0.25}
+        ],
+        "excellent": [
+            {"item": "執行力", "weight": 0.33},
+            {"item": "自我學習", "weight": 0.33},
+            {"item": "個人優點與貢獻", "weight": 0.34}
+        ],
+        "threshold": 80,
+        "text_a": [{"title": "本月職務重點", "content": "請輸入內容..."}], # 修正為 dict
+        "text_b": [{"title": "工作品質", "content": "請輸入內容..."}]      # 修正為 dict
+    }
+
     st.session_state.config_data = {
         "電商": {
             "section_weights": [0.50, 0.30, 0.20],
@@ -124,29 +143,11 @@ if 'config_data' not in st.session_state:
                 {"title": "跨部門協作", "content": "提供替代方案..."},
                 {"title": "環境", "content": ""}
             ]
-        },
-        "通用": {
-            "section_weights": [0.50, 0.30, 0.20],
-            "basic": [
-                {"item": "KPI_1", "weight": 0.25},
-                {"item": "KPI_2", "weight": 0.25},
-                {"item": "KPI_3", "weight": 0.25},
-                {"item": "KPI_4", "weight": 0.25}
-            ],
-            "excellent": [
-                {"item": "執行力", "weight": 0.33},
-                {"item": "自我學習", "weight": 0.33},
-                {"item": "個人優點與貢獻", "weight": 0.34}
-            ],
-            "threshold": 80,
-            "text_a": [("本月職務重點", "請輸入內容...")],
-            "text_b": [("工作品質", "請輸入內容...")]
         }
     }
-
-for d in ["會計", "人資", "行銷"]:
-    if d not in st.session_state.config_data:
-        st.session_state.config_data[d] = st.session_state.config_data["通用"]
+    # 自動套用通用模板給其他部門 (不顯示 "通用" 選項)
+    for d in ["會計", "人資", "行銷"]:
+        st.session_state.config_data[d] = GENERAL_TEMPLATE
 
 if 'batch_queue' not in st.session_state:
     st.session_state.batch_queue = []
@@ -168,12 +169,11 @@ def calculate_dynamic_bonus(score, rules_data):
 # --- 5. 主標題 ---
 st.title("📊 總管理處人員評核系統")
 
-# --- 6. 版面佈局 (三欄位重心調整) ---
-# 左(0.8 - 資訊) | 中(1.5 - 評分主操作) | 右(0.7 - 結果與設定)
+# --- 6. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
 
 # ==========================================
-# 左欄：1. 人員資料 & 2. 每月職務目標 (輔助資訊)
+# 左欄：1. 人員資料 & 2. 每月職務目標
 # ==========================================
 with col_left:
     st.markdown("### 1. 人員資料")
@@ -195,7 +195,6 @@ with col_left:
     
     st.markdown("### 2. 職務目標參考")
     
-    # 預設閉合 (expanded=False)
     with st.expander("📝 每月職務目標 (點擊展開)", expanded=False):
         st.markdown('<div class="header-mid-a">A. 職務內容與目標</div>', unsafe_allow_html=True)
         for row in current_config['text_a']:
@@ -206,7 +205,7 @@ with col_left:
             st.text_area(f"● {row['title']}", value=row['content'], height=80, key=f"txt_b_{row['title']}")
 
 # ==========================================
-# 中欄：3. 評分內容 (主視覺區)
+# 中欄：3. 評分內容
 # ==========================================
 with col_mid:
     st.markdown("### 3. 評分內容")
@@ -263,7 +262,7 @@ with col_mid:
 # 右欄：4. 獎金試算 & 5. 設定匯出
 # ==========================================
 with col_right:
-    # --- 獎金區 (置頂) ---
+    # --- 獎金區 ---
     st.markdown("### 4. 年終獎金試算")
     
     with st.container(border=True):
@@ -273,7 +272,6 @@ with col_right:
             current_score = st.session_state.calculated_score_data["score"]
             meta_name = st.session_state.calculated_score_data["meta"]["name"]
             
-            # 分數與級距
             st.markdown(f'<div class="result-box">總分：{current_score:.2f}</div>', unsafe_allow_html=True)
             grade_text, grade_months, grade_color = calculate_dynamic_bonus(current_score, st.session_state.bonus_rules)
             
@@ -286,7 +284,6 @@ with col_right:
             
             st.divider()
             
-            # 金額試算
             c_b1, c_b2 = st.columns([2, 1])
             with c_b1:
                 bonus_base = st.number_input("月薪 (Base)", value=0, step=1000, key="calc_base")
@@ -300,7 +297,6 @@ with col_right:
             else:
                 st.caption("請輸入月薪")
 
-            # 加入清單
             st.markdown("---")
             final_confirm_bonus = st.number_input("最終實發", value=int(final_bonus), step=100, key="calc_final")
             
@@ -328,7 +324,7 @@ with col_right:
         else:
             st.info("👈 請先在中欄計算總分")
 
-    # --- 設定與匯出 (下方) ---
+    # --- 設定與匯出 ---
     st.markdown("### 5. 設定與匯出")
     
     tab1, tab2 = st.tabs(["⚙️ 參數設定", "📥 匯出清單"])
@@ -336,7 +332,6 @@ with col_right:
     with tab1:
         st.caption("修改後請按 Enter 套用")
         
-        # 預設全部閉合 (expanded=False)
         with st.expander("年終獎金級距設定", expanded=False):
             st.caption("設定分數區間與對應月數")
             df_bonus = pd.DataFrame(st.session_state.bonus_rules)
@@ -388,15 +383,15 @@ with col_right:
         else:
             st.info("尚無資料")
 
-# --- 7. 系統資訊 (Footer - 預設閉合) ---
+# --- 7. 系統資訊 (Footer) ---
 with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
-            <li>v26.0: 版面重心調整(中欄評分、左欄參數)、職務目標預設閉合、設定項目預設閉合。</li>
-            <li>v25.1: 修復舊版 Streamlit 相容性問題，優化獎金區塊位置。</li>
-            <li>v24.0: 獎金區塊獨立化，新增版本資訊。</li>
+            <li>v26.1: 修復通用部門設定 Bug，優化資料結構。</li>
+            <li>v26.0: 版面重心調整，職務目標移至左欄，評分置中。</li>
+            <li>v25.1: 修復舊版 Streamlit 相容性問題。</li>
         </ul>
         <br><br>
         <p>© 2026 馬尼通訊總管理處考核系統</p>
