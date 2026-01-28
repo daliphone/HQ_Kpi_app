@@ -16,7 +16,7 @@ st.markdown("""
 <style>
     /* 區塊標題 */
     .header-a { background-color: #E3F2FD; padding: 10px; border-radius: 5px; color: #1565C0; font-weight: bold; margin-bottom: 5px; border: 1px solid #BBDEFB; }
-    .header-b { background-color: #E8F5E9; padding: 10px; border-radius: 5px; color: #2E7D32; font-weight: bold; margin-bottom: 5px; border: 1px solid #C8E6C9; }
+    .header-b { background-color: #F3E5F5; padding: 10px; border-radius: 5px; color: #6A1B9A; font-weight: bold; margin-bottom: 5px; border: 1px solid #E1BEE7; }
     .header-c { background-color: #FFF3E0; padding: 10px; border-radius: 5px; color: #E65100; font-weight: bold; margin-bottom: 5px; border: 1px solid #FFE0B2; }
     .header-mid-a { background-color: #673AB7; padding: 8px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
     .header-mid-b { background-color: #00897B; padding: 8px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
@@ -33,12 +33,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 核心功能：即時存檔回調函數 (Callback) ---
+# --- 3. 核心功能：即時存檔回調函數 ---
 def update_target_content(dept, section, idx, key):
-    """
-    當使用者修改職務目標文字時，此函數會立即將內容寫入 session_state.config_data
-    確保切換部門後資料不遺失。
-    """
     new_value = st.session_state[key]
     st.session_state.config_data[dept][section][idx]['content'] = new_value
 
@@ -53,110 +49,113 @@ if 'bonus_rules' not in st.session_state:
         {"grade": "D (不合格)", "min_score": 0, "months": 0.0, "color": "#616161"},
     ]
 
+# *** 核心更新：寫入詳細評分標準 (KPI + OKR 範例) ***
 if 'config_data' not in st.session_state:
-    # 定義通用模板
+    # 1. 電商 (生存指標 + 擴張目標)
+    ECOMMERCE_TEMPLATE = {
+        "section_weights": [0.50, 0.30, 0.20],
+        "basic": [
+            {"item": "訂單處理正確率", "weight": 0.30},
+            {"item": "客服聊聊響應", "weight": 0.30},
+            {"item": "商城活動參與", "weight": 0.20},
+            {"item": "上架與庫存準確", "weight": 0.20}
+        ],
+        "excellent": [
+            {"item": "KR1: 滯銷品去化", "weight": 0.33},
+            {"item": "KR2: 競業價格監控", "weight": 0.33},
+            {"item": "KR3: 客單價提升", "weight": 0.34}
+        ],
+        "threshold": 80,
+        "text_a": [
+            {"title": "O (目標): 維持優選賣家資格", "content": "1. 確保出貨零失誤\n2. 聊聊回應率維持 95% 以上"},
+            {"title": "訂單正確率標準", "content": "100分: 0% 錯誤\n85分: < 0.5% 錯誤\n60分: > 1.5% 錯誤"},
+            {"title": "聊聊響應標準", "content": "100分: >95%且<30分\n85分: >90%且<1小時\n60分: <85%"}
+        ],
+        "text_b": [
+            {"title": "O (目標): 提升賣場獲利結構", "content": "1. 降低庫存週轉天數\n2. 提高組合商品銷售比重"},
+            {"title": "KR 關鍵結果", "content": "1. 成功去化 3 款滯銷 >90天商品\n2. 提出 2 次競業破盤價分析報告"}
+        ]
+    }
+
+    # 2. 自媒體 (流量指標 + 品牌目標)
+    MEDIA_TEMPLATE = {
+        "section_weights": [0.50, 0.30, 0.20],
+        "basic": [
+            {"item": "短影音產出成效", "weight": 0.30},
+            {"item": "官網SEO文章撰寫", "weight": 0.30},
+            {"item": "社群互動維護", "weight": 0.20},
+            {"item": "導流貢獻(ROAS)", "weight": 0.20}
+        ],
+        "excellent": [
+            {"item": "KR1: 爆款影片", "weight": 0.33},
+            {"item": "KR2: 關鍵字排名", "weight": 0.33},
+            {"item": "KR3: 時事跟風速度", "weight": 0.34}
+        ],
+        "threshold": 80,
+        "text_a": [
+            {"title": "O (目標): 建立流量護城河", "content": "1. 穩定產出高品質內容\n2. 經營官網長尾流量"},
+            {"title": "短影音標準", "content": "100分: 12支 + 觀看破萬\n85分: 12支準時完成\n60分: 數量未達標"},
+            {"title": "SEO文章標準", "content": "100分: 4篇 + 關鍵字上首頁\n85分: 4篇 + 符合SEO結構\n60分: 未產出"}
+        ],
+        "text_b": [
+            {"title": "O (目標): 擴大品牌心佔率", "content": "讓馬尼成為台南 3C 資訊首選"},
+            {"title": "KR 關鍵結果", "content": "1. 打造 1 支互動率 >5% 的影片\n2. 3C 重大新聞發生後 4 小時內產出內容"}
+        ]
+    }
+
+    # 3. 社群編輯 (效率指標 + 視覺目標)
+    DESIGN_TEMPLATE = {
+        "section_weights": [0.50, 0.30, 0.20],
+        "basic": [
+            {"item": "素材完成時效", "weight": 0.30},
+            {"item": "設計修改次數", "weight": 0.30},
+            {"item": "點擊率(CTR)", "weight": 0.20},
+            {"item": "品牌一致性", "weight": 0.20}
+        ],
+        "excellent": [
+            {"item": "KR1: A/B Test提案", "weight": 0.33},
+            {"item": "KR2: AI工具應用", "weight": 0.33},
+            {"item": "KR3: 視覺優化", "weight": 0.34}
+        ],
+        "threshold": 85,
+        "text_a": [
+            {"title": "O (目標): 視覺傳達精準化", "content": "1. 提升素材點擊率\n2. 減少溝通修改成本"},
+            {"title": "時效標準", "content": "100分: 提前1天完稿\n85分: 準時完稿\n0分: 開天窗"},
+            {"title": "修改標準", "content": "100分: 一次過稿\n85分: 修改2次內\n60分: 修改>5次"}
+        ],
+        "text_b": [
+            {"title": "O (目標): 品牌視覺升級", "content": "導入新工具提升質感與效率"},
+            {"title": "KR 關鍵結果", "content": "1. 主動提出 2 款不同風格封面圖測試 CTR\n2. 導入 AI 去背/生成工具縮短工時"}
+        ]
+    }
+
+    # 4. 通用 (後勤/會計/人資)
     GENERAL_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
-            {"item": "KPI_1", "weight": 0.25},
-            {"item": "KPI_2", "weight": 0.25},
-            {"item": "KPI_3", "weight": 0.25},
-            {"item": "KPI_4", "weight": 0.25}
+            {"item": "工作準確度", "weight": 0.30},
+            {"item": "專案完成時效", "weight": 0.30},
+            {"item": "問題解決能力", "weight": 0.20},
+            {"item": "跨部門協作", "weight": 0.20}
         ],
         "excellent": [
-            {"item": "執行力", "weight": 0.33},
-            {"item": "自我學習", "weight": 0.33},
-            {"item": "個人優點與貢獻", "weight": 0.34}
+            {"item": "KR1: 流程優化", "weight": 0.33},
+            {"item": "KR2: 成本控制", "weight": 0.33},
+            {"item": "KR3: 團隊支援", "weight": 0.34}
         ],
         "threshold": 80,
-        "text_a": [{"title": "本月職務重點", "content": "請輸入內容..."}], 
-        "text_b": [{"title": "工作品質", "content": "請輸入內容..."}]
+        "text_a": [{"title": "O (目標): 營運零失誤", "content": "確保帳務/人事/行政流程順暢無誤"}],
+        "text_b": [{"title": "O (目標): 提升組織效率", "content": "優化現有流程，降低溝通成本"}]
     }
 
     st.session_state.config_data = {
-        "電商": {
-            "section_weights": [0.50, 0.30, 0.20],
-            "basic": [
-                {"item": "訂單處理正確率", "weight": 0.30},
-                {"item": "上架準確率", "weight": 0.30},
-                {"item": "活動提案數", "weight": 0.20},
-                {"item": "平台廣告效益", "weight": 0.20}
-            ],
-            "excellent": [
-                {"item": "執行力", "weight": 0.33},
-                {"item": "自我學習", "weight": 0.33},
-                {"item": "個人優點與貢獻", "weight": 0.34}
-            ],
-            "threshold": 80,
-            "text_a": [
-                {"title": "商品上架效率", "content": "1.新品通知上架\n2.平台上架"},
-                {"title": "訂單處理正確率", "content": "1.每月錯誤率≦3%"},
-                {"title": "聊聊處理時效", "content": "1.平均處理時間 ≦24hr\n2.回覆正確性≦90%"},
-                {"title": "成效追蹤與分析", "content": ""},
-                {"title": "促銷活動配合度", "content": "1.上檔準時率、促銷活動回報率"}
-            ],
-            "text_b": [
-                {"title": "跨部門協作", "content": ""},
-                {"title": "學習與改善能力", "content": "1.曝光成長、轉換率提升率（月成長）"},
-                {"title": "環境", "content": ""}
-            ]
-        },
-        "自媒體": {
-            "section_weights": [0.50, 0.30, 0.20],
-            "basic": [
-                {"item": "曝光成長率", "weight": 0.25},
-                {"item": "互動率", "weight": 0.25},
-                {"item": "導流貢獻", "weight": 0.25},
-                {"item": "內容品質", "weight": 0.25}
-            ],
-            "excellent": [
-                {"item": "執行力", "weight": 0.33},
-                {"item": "自我學習", "weight": 0.33},
-                {"item": "個人優點與貢獻", "weight": 0.34}
-            ],
-            "threshold": 80,
-            "text_a": [
-                {"title": "貼文/短影音產出數", "content": "1.文章 12 篇/月，短影音 12 支/月"},
-                {"title": "內容其明確性與目的性", "content": "1. 成品內容有其目標..."},
-                {"title": "成效追蹤與分析", "content": "每月統計，準時繳交與內容完整性"},
-                {"title": "互動率（留言/分享/點讚）", "content": ""}
-            ],
-            "text_b": [
-                {"title": "創意與學習性", "content": "自主學習..."},
-                {"title": "跨部門協作", "content": "主動與設計/行銷配合..."},
-                {"title": "環境", "content": ""}
-            ]
-        },
-        "社群編輯": {
-            "section_weights": [0.50, 0.30, 0.20],
-            "basic": [
-                {"item": "素材完成率", "weight": 0.30},
-                {"item": "設計品質", "weight": 0.30},
-                {"item": "文案提案", "weight": 0.20},
-                {"item": "品牌一致性", "weight": 0.20}
-            ],
-            "excellent": [
-                {"item": "執行力", "weight": 0.33},
-                {"item": "自我學習", "weight": 0.33},
-                {"item": "個人優點與貢獻", "weight": 0.34}
-            ],
-            "threshold": 85,
-            "text_a": [
-                {"title": "設計完成時效", "content": "1. 任務完成時間..."},
-                {"title": "創意與排版多樣性", "content": "1. 提供選擇性及目標性的成品"},
-                {"title": "成效追蹤與分析", "content": "1. 平台後台數據整理分析"},
-                {"title": "互動率", "content": ""}
-            ],
-            "text_b": [
-                {"title": "創意與學習性", "content": "新工具/新風格的主動學習..."},
-                {"title": "跨部門協作", "content": "提供替代方案..."},
-                {"title": "環境", "content": ""}
-            ]
-        }
+        "電商": ECOMMERCE_TEMPLATE,
+        "自媒體": MEDIA_TEMPLATE,
+        "社群編輯": DESIGN_TEMPLATE,
+        "會計": GENERAL_TEMPLATE,
+        "人資": GENERAL_TEMPLATE,
+        "行銷": GENERAL_TEMPLATE # 若行銷偏企劃可共用通用，偏執行可參考自媒體
     }
-    # 自動套用通用模板給其他部門
-    for d in ["會計", "人資", "行銷"]:
-        st.session_state.config_data[d] = GENERAL_TEMPLATE
 
 if 'batch_queue' not in st.session_state:
     st.session_state.batch_queue = []
@@ -182,7 +181,7 @@ st.title("📊 總管理處人員評核系統")
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
 
 # ==========================================
-# 左欄：1. 人員資料 & 2. 每月職務目標
+# 左欄：1. 人員資料 & 2. 每月職務目標 (O: Objectives)
 # ==========================================
 with col_left:
     st.markdown("### 1. 人員資料")
@@ -199,29 +198,24 @@ with col_left:
             
         input_date = st.date_input("日期", value=datetime.now())
     
-    # 取得 Config
     current_config = st.session_state.config_data[input_dept]
     
-    st.markdown("### 2. 職務目標參考")
+    st.markdown("### 2. 職務目標 (Objectives)")
     
-    # 預設閉合
-    with st.expander("📝 每月職務目標 (可編輯/自動存檔)", expanded=False):
-        st.markdown('<div class="header-mid-a">A. 職務內容與目標</div>', unsafe_allow_html=True)
-        # 使用 enumerate 取得索引，確保更新正確的 list item
+    with st.expander("📝 設定本月 O 與 KR 標準 (點擊展開)", expanded=False):
+        st.markdown('<div class="header-mid-a">A. 基礎目標 (KPI/Maintenance)</div>', unsafe_allow_html=True)
         for i, row in enumerate(current_config['text_a']):
-            # 產生唯一的 key，包含部門、區塊、索引，避免衝突
             unique_key = f"target_a_{input_dept}_{i}"
             st.text_area(
                 f"● {row['title']}", 
                 value=row['content'], 
                 height=80, 
                 key=unique_key,
-                # 綁定即時存檔回調函數
                 on_change=update_target_content,
                 args=(input_dept, 'text_a', i, unique_key)
             )
 
-        st.markdown('<div class="header-mid-b">B. 內在品質與工作環境</div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-mid-b">B. 挑戰目標 (OKR/Growth)</div>', unsafe_allow_html=True)
         for i, row in enumerate(current_config['text_b']):
             unique_key = f"target_b_{input_dept}_{i}"
             st.text_area(
@@ -234,7 +228,7 @@ with col_left:
             )
 
 # ==========================================
-# 中欄：3. 評分內容
+# 中欄：3. 評分內容 (KPI + KR Scoring)
 # ==========================================
 with col_mid:
     st.markdown("### 3. 評分內容")
@@ -242,8 +236,8 @@ with col_mid:
     wa, wb, wc = current_config['section_weights']
 
     with st.form("score_form"):
-        # A區
-        st.markdown(f'<div class="header-a">A. 職務基本標準 (權重 {int(wa*100)}%)</div>', unsafe_allow_html=True)
+        # A區 - KPI
+        st.markdown(f'<div class="header-a">A. 職務基本標準 (權重 {int(wa*100)}%) - KPI</div>', unsafe_allow_html=True)
         scores_a = []
         cols_a = st.columns(2)
         for i, row in enumerate(current_config['basic']):
@@ -251,8 +245,8 @@ with col_mid:
                 val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", min_value=0, max_value=100, value=80, step=5, key=f"a_{i}")
                 scores_a.append(val * row['weight'])
 
-        # B區
-        st.markdown(f'<div class="header-b">B. 卓越主動表現 (權重 {int(wb*100)}%)</div>', unsafe_allow_html=True)
+        # B區 - OKR Key Results
+        st.markdown(f'<div class="header-b">B. OKR 關鍵結果 (權重 {int(wb*100)}%) - 挑戰</div>', unsafe_allow_html=True)
         scores_b = []
         cols_b = st.columns(2)
         for i, row in enumerate(current_config['excellent']):
@@ -260,7 +254,7 @@ with col_mid:
                 val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", min_value=0, max_value=100, value=80, step=5, key=f"b_{i}")
                 scores_b.append(val * row['weight'])
 
-        # C區
+        # C區 - 主管評核
         st.markdown(f'<div class="header-c">C. 主管綜合評核 (權重 {int(wc*100)}%)</div>', unsafe_allow_html=True)
         col_c1, col_c2 = st.columns([1, 2])
         with col_c1:
@@ -271,7 +265,6 @@ with col_mid:
         st.markdown("<br>", unsafe_allow_html=True)
         submitted = st.form_submit_button("📊 計算總分", use_container_width=True, type="primary")
 
-    # 計算邏輯
     if submitted:
         total_a = sum(scores_a)
         total_b = sum(scores_b)
@@ -285,7 +278,7 @@ with col_mid:
                 "date": str(input_date), "level": input_level, "comment": mgr_comment
             }
         }
-        st.success(f"計算完成！總分：{final_score:.2f} (請參考右側獎金試算)")
+        st.success(f"計算完成！總分：{final_score:.2f}")
 
 # ==========================================
 # 右欄：4. 獎金試算 & 5. 設定匯出
@@ -332,25 +325,14 @@ with col_right:
             if st.button("➕ 加入待匯出清單", type="secondary", use_container_width=True):
                 meta = st.session_state.calculated_score_data["meta"]
                 
-                # 抓取中欄(現在在左欄)的即時資料
-                # 注意：因為現在支援即時存檔，我們可以從 config_data 直接讀取最新的值
-                # 或者直接從 session_state 的 key 讀取
                 text_data = {}
                 try:
-                    for i, row in enumerate(current_config['text_a']):
-                        # 使用與生成時相同的 key 規則
-                        k = f"target_a_{input_dept}_{i}"
-                        if k in st.session_state: 
-                            text_data[f"A_{row['title']}"] = st.session_state[k]
-                        else:
-                            text_data[f"A_{row['title']}"] = row['content'] # Fallback
-
-                    for i, row in enumerate(current_config['text_b']):
-                        k = f"target_b_{input_dept}_{i}"
-                        if k in st.session_state: 
-                            text_data[f"B_{row['title']}"] = st.session_state[k]
-                        else:
-                            text_data[f"B_{row['title']}"] = row['content']
+                    for row in current_config['text_a']:
+                        k = f"target_a_{input_dept}_{i}" # 注意這裡的key需要跟生成時一致，但因為是 submit 後抓取，可能需要優化
+                        # 簡單處理：直接存整個 config 內容
+                        text_data[f"A_{row['title']}"] = row['content']
+                    for row in current_config['text_b']:
+                        text_data[f"B_{row['title']}"] = row['content']
                 except: pass
 
                 full_data = {
@@ -399,12 +381,12 @@ with col_right:
             nw_c = c_w3.number_input("C區權重", value=edit_config['section_weights'][2], step=0.05)
             st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
             
-            st.caption("A區細項")
+            st.caption("A區細項 (KPI - 基礎)")
             df_b = pd.DataFrame(edit_config['basic'])
             ed_b = st.data_editor(df_b, num_rows="dynamic", key="ed_b")
             st.session_state.config_data[edit_dept]['basic'] = ed_b.to_dict('records')
             
-            st.caption("B區細項")
+            st.caption("B區細項 (OKR - 挑戰)")
             df_e = pd.DataFrame(edit_config['excellent'])
             ed_e = st.data_editor(df_e, num_rows="dynamic", key="ed_e")
             st.session_state.config_data[edit_dept]['excellent'] = ed_e.to_dict('records')
@@ -430,8 +412,8 @@ with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
-            <li>v27.0: 新增職務目標即時存檔功能，解決切換部門資料遺失問題。</li>
-            <li>v26.1: 修復通用部門設定 Bug。</li>
+            <li>v28.0: 導入 OKR 評分架構，內建電商/自媒體/社群編輯詳細 KPI 基準。</li>
+            <li>v27.0: 新增職務目標即時存檔功能。</li>
             <li>v26.0: 版面重心調整。</li>
         </ul>
         <br><br>
