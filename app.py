@@ -20,19 +20,39 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. CSS 美化 ---
+# --- 2. CSS 美化 (v32.0 現代化優化) ---
 st.markdown("""
 <style>
-    .header-a { background-color: #E3F2FD; padding: 10px; border-radius: 5px; color: #1565C0; font-weight: bold; margin-bottom: 5px; border: 1px solid #BBDEFB; }
-    .header-b { background-color: #F3E5F5; padding: 10px; border-radius: 5px; color: #6A1B9A; font-weight: bold; margin-bottom: 5px; border: 1px solid #E1BEE7; }
-    .header-c { background-color: #FFF3E0; padding: 10px; border-radius: 5px; color: #E65100; font-weight: bold; margin-bottom: 5px; border: 1px solid #FFE0B2; }
-    .header-mid-a { background-color: #673AB7; padding: 8px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-    .header-mid-b { background-color: #00897B; padding: 8px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-    .bonus-box { background-color: #FFF8E1; padding: 15px; border-radius: 10px; border: 2px solid #FBC02D; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .result-box { background-color: #FAFAFA; padding: 10px; border-radius: 5px; color: #333; font-size: 22px; font-weight: bold; text-align: center; border: 1px solid #ddd; margin-top: 10px; }
-    .grade-badge { font-size: 20px; font-weight: bold; padding: 5px 15px; border-radius: 20px; color: white; display: inline-block; margin: 10px 0;}
-    .footer { text-align: center; color: #888; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
-    .history-card { background-color: white; padding: 15px; border-radius: 8px; border-left: 5px solid #1976D2; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px;}
+    /* 整體背景與字體微調 */
+    .stApp { background-color: #F8F9FA; }
+    
+    /* 現代化卡片設計通用類別 */
+    .modern-card { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #E0E0E0;}
+    
+    /* 區塊標題 (柔和專業色系) */
+    .header-a { background-color: #E8F0FE; padding: 12px 15px; border-radius: 8px; color: #1967D2; font-weight: 700; margin-bottom: 15px; border-left: 5px solid #1967D2; font-size: 16px;}
+    .header-b { background-color: #F3E8FD; padding: 12px 15px; border-radius: 8px; color: #8430CE; font-weight: 700; margin-bottom: 15px; border-left: 5px solid #8430CE; font-size: 16px;}
+    .header-c { background-color: #FEF7E0; padding: 12px 15px; border-radius: 8px; color: #E27200; font-weight: 700; margin-bottom: 15px; border-left: 5px solid #E27200; font-size: 16px;}
+    
+    /* 子標題 */
+    .header-mid-a { background-color: #5F6368; padding: 8px 12px; border-radius: 6px; color: white; font-weight: 600; margin-bottom: 10px; font-size: 14px; }
+    .header-mid-b { background-color: #5F6368; padding: 8px 12px; border-radius: 6px; color: white; font-weight: 600; margin-bottom: 10px; font-size: 14px; }
+    
+    /* 獎金試算結果區塊 */
+    .result-box { background-color: #F1F3F4; padding: 15px; border-radius: 8px; color: #202124; font-size: 26px; font-weight: 800; text-align: center; border: 2px dashed #DADCE0; margin: 10px 0; }
+    .grade-badge { font-size: 22px; font-weight: 800; padding: 8px 20px; border-radius: 25px; color: white; display: inline-block; margin: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+    .bonus-amount { font-size: 24px; color: #137333; font-weight: bold; text-align: center; padding: 10px; background-color: #E6F4EA; border-radius: 8px; margin-top: 10px;}
+    
+    /* 歷史紀錄卡片 */
+    .history-card { background-color: white; padding: 16px; border-radius: 10px; border-left: 6px solid #1976D2; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px; transition: transform 0.2s;}
+    .history-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12);}
+    
+    /* Footer */
+    .footer { text-align: center; color: #9AA0A6; font-size: 12px; margin-top: 60px; border-top: 1px solid #E8EAED; padding-top: 20px; }
+    
+    /* 隱藏預設的 Streamlit 頂部裝飾條 (選擇性) */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -44,12 +64,12 @@ def update_target_content(dept, section, idx, key):
 # --- 4. 初始化資料 ---
 if 'bonus_rules' not in st.session_state:
     st.session_state.bonus_rules = [
-        {"grade": "S (特優)", "min_score": 90, "months": 1.5, "color": "#D32F2F"},
-        {"grade": "A (優良)", "min_score": 80, "months": 1.0, "color": "#1976D2"},
-        {"grade": "B+ (甲上)", "min_score": 75, "months": 0.8, "color": "#2E7D32"},
-        {"grade": "B- (甲)", "min_score": 70, "months": 0.6, "color": "#388E3C"},
-        {"grade": "C (待改善)", "min_score": 60, "months": 0.5, "color": "#FBC02D"},
-        {"grade": "D (不合格)", "min_score": 0, "months": 0.0, "color": "#616161"},
+        {"grade": "S (特優)", "min_score": 90, "months": 1.5, "color": "#D93025"},
+        {"grade": "A (優良)", "min_score": 80, "months": 1.0, "color": "#1A73E8"},
+        {"grade": "B+ (甲上)", "min_score": 75, "months": 0.8, "color": "#188038"},
+        {"grade": "B- (甲)", "min_score": 70, "months": 0.6, "color": "#34A853"},
+        {"grade": "C (待改善)", "min_score": 60, "months": 0.5, "color": "#F9AB00"},
+        {"grade": "D (不合格)", "min_score": 0, "months": 0.0, "color": "#5F6368"},
     ]
 
 if 'config_data' not in st.session_state:
@@ -211,50 +231,59 @@ def get_gsheets_connection():
     except Exception as e:
         return None, str(e)
 
-# --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v31.2)")
+# --- 6. 主標題 (增加企業識別感) ---
+st.markdown("""
+<div style="background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px; border-bottom: 4px solid #1A73E8; display: flex; align-items: center; gap: 15px;">
+    <h1 style="margin: 0; color: #202124; font-size: 32px;">📊 馬尼通訊 | 總管理處評核系統</h1>
+</div>
+""", unsafe_allow_html=True)
 
-# --- 7. 版面佈局 ---
-col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
+# --- 7. 版面佈局 (v32.0 調整空間比例) ---
+col_left, col_mid, col_right = st.columns([1, 1.6, 1], gap="large")
 
 # ==========================================
-# 左欄：1. 人員資料 & 2. 每月職務目標 (O: Objectives)
+# 左欄：1. 人員資料 & 2. 每月職務目標
 # ==========================================
 with col_left:
-    st.markdown("### 1. 人員資料")
-    with st.container(border=True):
-        input_name = st.text_input("姓名", value="")
-        input_supervisor = st.text_input("主管", value="")
+    st.markdown("<h4 style='color: #4285F4;'>1. 評核基本資料</h4>", unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        input_name = st.text_input("👤 受評人姓名", value="")
+        input_supervisor = st.text_input("👨‍💼 評分主管", value="")
+        
         c_l1, c_l2 = st.columns(2)
         with c_l1:
-            input_dept = st.selectbox("部門", options=DEPT_LIST, index=0)
+            input_dept = st.selectbox("🏢 部門", options=DEPT_LIST, index=0)
         with c_l2:
-            input_level = st.selectbox("職等", options=JOB_LEVELS, index=1)
-        input_date = st.date_input("日期", value=datetime.now())
+            input_level = st.selectbox("⭐ 職等", options=JOB_LEVELS, index=1)
+            
+        input_date = st.date_input("📅 評核日期", value=datetime.now())
+        st.markdown('</div>', unsafe_allow_html=True)
     
     current_config = st.session_state.config_data[input_dept]
     
-    st.markdown("### 2. 職務目標 (Objectives)")
-    with st.expander("📝 設定本月 O 與 KR 標準 (自動存檔)", expanded=False):
-        st.markdown('<div class="header-mid-a">A. 基礎目標 (KPI/Maintenance)</div>', unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #4285F4; margin-top: 15px;'>2. 職務目標 (Objectives)</h4>", unsafe_allow_html=True)
+    with st.expander("📝 點擊設定本月目標 (自動存檔)", expanded=False):
+        st.markdown('<div class="header-mid-a">A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
         for i, row in enumerate(current_config['text_a']):
             unique_key = f"target_a_{input_dept}_{i}"
             st.text_area(f"● {row['title']}", value=row['content'], height=80, key=unique_key, on_change=update_target_content, args=(input_dept, 'text_a', i, unique_key))
 
-        st.markdown('<div class="header-mid-b">B. 挑戰目標 (OKR/Growth)</div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="header-mid-b">B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
         for i, row in enumerate(current_config['text_b']):
             unique_key = f"target_b_{input_dept}_{i}"
             st.text_area(f"● {row['title']}", value=row['content'], height=80, key=unique_key, on_change=update_target_content, args=(input_dept, 'text_b', i, unique_key))
 
 # ==========================================
-# 中欄：3. 評分內容 (內建法遵 Tooltip)
+# 中欄：3. 評分內容 (加入分隔線與精緻排版)
 # ==========================================
 with col_mid:
-    st.markdown("### 3. 評分內容")
+    st.markdown("<h4 style='color: #4285F4;'>3. 績效評分區</h4>", unsafe_allow_html=True)
     wa, wb, wc = current_config['section_weights']
 
-    with st.form("score_form"):
-        st.markdown(f'<div class="header-a">A. 職務基本標準 (權重 {int(wa*100)}%) - KPI</div>', unsafe_allow_html=True)
+    with st.form("score_form", border=True):
+        st.markdown(f'<div class="header-a">🎯 A. 職務基本標準 (權重 {int(wa*100)}%) - KPI</div>', unsafe_allow_html=True)
         scores_a = []
         cols_a = st.columns(2)
         for i, row in enumerate(current_config['basic']):
@@ -263,7 +292,9 @@ with col_mid:
                 val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", min_value=-100, max_value=100, value=80, step=5, key=f"a_{i}", help=help_text)
                 scores_a.append(val * row['weight'])
 
-        st.markdown(f'<div class="header-b">B. OKR 關鍵結果 (權重 {int(wb*100)}%) - 挑戰</div>', unsafe_allow_html=True)
+        st.divider()
+
+        st.markdown(f'<div class="header-b">🚀 B. OKR 關鍵結果 (權重 {int(wb*100)}%) - 挑戰</div>', unsafe_allow_html=True)
         scores_b = []
         cols_b = st.columns(2)
         for i, row in enumerate(current_config['excellent']):
@@ -272,59 +303,63 @@ with col_mid:
                 val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", min_value=0, max_value=100, value=80, step=5, key=f"b_{i}", help=help_text)
                 scores_b.append(val * row['weight'])
 
-        st.markdown(f'<div class="header-c">C. 主管綜合評核 (權重 {int(wc*100)}%)</div>', unsafe_allow_html=True)
-        col_c1, col_c2 = st.columns([1, 2])
+        st.divider()
+
+        st.markdown(f'<div class="header-c">💡 C. 主管綜合評核 (權重 {int(wc*100)}%)</div>', unsafe_allow_html=True)
+        col_c1, col_c2 = st.columns([1, 2.5])
         with col_c1:
-            mgr_score = st.selectbox("評分 (1-10)", options=range(1, 11), index=7)
+            mgr_score = st.selectbox("綜合評分 (1-10)", options=range(1, 11), index=7)
         with col_c2:
-            mgr_comment = st.text_area("反饋評語", height=38, placeholder="分數低於60分需詳述原因...")
+            mgr_comment = st.text_area("✍️ 反饋評語 (必填)", height=68, placeholder="請寫下具體表現或需改善之處... (分數低於60分需詳述原因)")
 
         st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("📊 計算總分", use_container_width=True, type="primary")
+        submitted = st.form_submit_button("🧮 計算最終總分", use_container_width=True, type="primary")
 
     if submitted:
-        total_a = sum(scores_a)
-        total_b = sum(scores_b)
-        total_c = mgr_score * 10 
-        final_score = (total_a * wa) + (total_b * wb) + (total_c * wc)
-        
-        a_details = []
-        for i, row in enumerate(current_config['basic']):
-            a_details.append(f"✓ {row['item']}: {st.session_state[f'a_{i}']}")
-        
-        b_details = []
-        for i, row in enumerate(current_config['excellent']):
-            b_details.append(f"✓ {row['item']}: {st.session_state[f'b_{i}']}")
-            
-        text_records = []
-        for i, row in enumerate(current_config['text_a']):
-            text_records.append(f"【{row['title']}】\n{st.session_state.get(f'target_a_{input_dept}_{i}', row['content'])}")
-        for i, row in enumerate(current_config['text_b']):
-            text_records.append(f"【{row['title']}】\n{st.session_state.get(f'target_b_{input_dept}_{i}', row['content'])}")
-        
-        st.session_state.calculated_score_data = {
-            "score": final_score,
-            "meta": {
-                "name": input_name, "dept": input_dept, "supervisor": input_supervisor,
-                "date": str(input_date), "level": input_level, "comment": mgr_comment,
-                "a_detail_str": "\n".join(a_details),
-                "b_detail_str": "\n".join(b_details),
-                "text_record_str": "\n\n".join(text_records)
-            }
-        }
-        
-        if final_score < 60:
-            st.error(f"⚠️ 警告：總分 {final_score:.2f} 低於及格線，請務必安排面談並留存輔導紀錄 (PIP)。")
+        if not input_name or not input_supervisor:
+            st.error("⚠️ 請先於左側填寫「受評人姓名」與「評分主管」！")
         else:
-            st.success(f"計算完成！總分：{final_score:.2f}")
+            total_a = sum(scores_a)
+            total_b = sum(scores_b)
+            total_c = mgr_score * 10 
+            final_score = (total_a * wa) + (total_b * wb) + (total_c * wc)
+            
+            a_details = []
+            for i, row in enumerate(current_config['basic']):
+                a_details.append(f"✓ {row['item']}: {st.session_state[f'a_{i}']}")
+            
+            b_details = []
+            for i, row in enumerate(current_config['excellent']):
+                b_details.append(f"✓ {row['item']}: {st.session_state[f'b_{i}']}")
+                
+            text_records = []
+            for i, row in enumerate(current_config['text_a']):
+                text_records.append(f"【{row['title']}】\n{st.session_state.get(f'target_a_{input_dept}_{i}', row['content'])}")
+            for i, row in enumerate(current_config['text_b']):
+                text_records.append(f"【{row['title']}】\n{st.session_state.get(f'target_b_{input_dept}_{i}', row['content'])}")
+            
+            st.session_state.calculated_score_data = {
+                "score": final_score,
+                "meta": {
+                    "name": input_name, "dept": input_dept, "supervisor": input_supervisor,
+                    "date": str(input_date), "level": input_level, "comment": mgr_comment,
+                    "a_detail_str": "\n".join(a_details),
+                    "b_detail_str": "\n".join(b_details),
+                    "text_record_str": "\n\n".join(text_records)
+                }
+            }
+            
+            if final_score < 60:
+                st.error(f"⚠️ 警告：總分 {final_score:.2f} 低於及格線，請務必安排面談並留存輔導紀錄 (PIP)。")
+            else:
+                st.success(f"✅ 計算完成！請查看右側面板進行確認與上傳。")
 
 # ==========================================
 # 右欄：4. 獎金試算 & 5. 雲端評核紀錄
 # ==========================================
 with col_right:
-    st.markdown("### 4. 獎金試算 & 設定")
+    st.markdown("<h4 style='color: #4285F4;'>4. 獎金試算 & 操作</h4>", unsafe_allow_html=True)
     
-    # 將歷史儀表板移出，這裡只保留操作型功能
     tab_calc, tab_settings = st.tabs(["💰 試算與上傳", "⚙️ 參數設定"])
 
     # --- Tab 1: 試算與上傳 ---
@@ -333,31 +368,37 @@ with col_right:
             current_score = st.session_state.calculated_score_data["score"]
             meta_name = st.session_state.calculated_score_data["meta"]["name"]
             
-            st.markdown(f'<div class="result-box">總分：{current_score:.2f}</div>', unsafe_allow_html=True)
+            st.markdown('<div class="modern-card" style="text-align: center; padding: 15px;">', unsafe_allow_html=True)
+            st.caption("最終核定總分")
+            st.markdown(f'<div class="result-box">{current_score:.2f}</div>', unsafe_allow_html=True)
+            
             grade_text, grade_months, grade_color = calculate_dynamic_bonus(current_score, st.session_state.bonus_rules)
             
             st.markdown(f"""
-            <div style="text-align: center;">
-                <span class="grade-badge" style="background-color: {grade_color};">{grade_text}</span>
-                <span style="font-size: 18px; font-weight: bold; color: #555;">{grade_months} 個月</span>
-            </div>
+                <span class="grade-badge" style="background-color: {grade_color};">{grade_text}</span><br>
+                <span style="font-size: 16px; color: #5F6368; font-weight: 600;">建議核發：{grade_months} 個月</span>
             """, unsafe_allow_html=True)
-            st.divider()
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            c_b1, c_b2 = st.columns([2, 1])
-            with c_b1:
-                bonus_base = st.number_input("月薪 (Base)", value=0, step=1000, key="calc_base")
-            with c_b2:
-                bonus_multi = st.number_input("倍率", value=1.0, step=0.1, key="calc_multi")
-            
-            final_bonus = max(0, bonus_base * grade_months * bonus_multi)
-            
-            if bonus_base > 0:
-                st.info(f"💵 核定獎金：${int(final_bonus):,}")
+            with st.container(border=True):
+                st.caption("💵 獎金模擬計算機")
+                c_b1, c_b2 = st.columns([2, 1])
+                with c_b1:
+                    bonus_base = st.number_input("月薪 (Base)", value=0, step=1000, key="calc_base")
+                with c_b2:
+                    bonus_multi = st.number_input("倍率", value=1.0, step=0.1, key="calc_multi")
                 
-            final_confirm_bonus = st.number_input("最終實發", value=int(final_bonus), step=100, key="calc_final")
+                final_bonus = max(0, bonus_base * grade_months * bonus_multi)
+                
+                if bonus_base > 0:
+                    st.markdown(f'<div class="bonus-amount">${int(final_bonus):,}</div>', unsafe_allow_html=True)
+                    
+                st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+                final_confirm_bonus = st.number_input("✅ 最終確認實發金額", value=int(final_bonus), step=100, key="calc_final")
             
-            if st.button("➕ 加入待匯出清單", type="secondary", use_container_width=True):
+            # 操作區塊視覺強化
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("➕ 第一步：加入待匯出清單", type="secondary", use_container_width=True):
                 meta = st.session_state.calculated_score_data["meta"]
                 full_data = {
                     "評分日期": meta["date"], 
@@ -374,17 +415,18 @@ with col_right:
                     "OKR_目標設定與內容": meta["text_record_str"]
                 }
                 st.session_state.batch_queue.append(full_data)
-                st.toast(f"✅ {meta['name']} 已加入清單！")
+                st.toast(f"✅ {meta['name']} 已加入清單！", icon="🛒")
         else:
-            st.info("👈 請先在中欄計算總分")
+            st.info("👈 請先在中欄完成評分並計算總分")
 
         if len(st.session_state.batch_queue) > 0:
             st.markdown("---")
-            st.markdown("##### 📥 待上傳清單")
+            st.markdown("##### 📥 待上傳清單 (共 {} 筆)".format(len(st.session_state.batch_queue)))
             df_export = pd.DataFrame(st.session_state.batch_queue)
             st.dataframe(df_export[['受評姓名', '部門', '總分', '評等']], hide_index=True)
             
-            if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🚀 第二步：正式上傳至雲端", type="primary", use_container_width=True):
                 if not HAS_GSHEETS:
                     st.error("未安裝套件")
                 else:
@@ -393,7 +435,7 @@ with col_right:
                         st.error(temp_path_or_error)
                     else:
                         try:
-                            with st.spinner("同步中..."):
+                            with st.spinner("🔄 正在安全連線與同步資料中..."):
                                 existing_data = pd.DataFrame()
                                 try:
                                     existing_data = conn.read(worksheet="評核紀錄")
@@ -409,7 +451,8 @@ with col_right:
                                     updated_data = pd.concat([existing_data, df_export], ignore_index=True)
                                     
                                 conn.update(worksheet="評核紀錄", data=updated_data)
-                            st.success("✅ 上傳成功！")
+                            st.success("✅ 上傳成功！資料已安全備份至 Google Sheets。")
+                            st.balloons()
                             st.session_state.batch_queue = [] # 上傳後清空
                             st.session_state.cloud_data_cache = updated_data # 更新快取，立刻顯示
                         except Exception as e:
@@ -417,7 +460,7 @@ with col_right:
                         finally:
                             if os.path.exists(temp_path_or_error): os.remove(temp_path_or_error)
             
-            if st.button("🗑️ 清空清單"):
+            if st.button("🗑️ 取消並清空清單"):
                 st.session_state.batch_queue = []
                 st.rerun()
 
@@ -451,11 +494,10 @@ with col_right:
     # ==========================================
     # 獨立區塊：5. 雲端評核紀錄 (預設閉合)
     # ==========================================
-    st.markdown("### 5. 雲端評核紀錄")
+    st.markdown("<h4 style='color: #4285F4; margin-top: 20px;'>5. 系統資料庫</h4>", unsafe_allow_html=True)
     
-    # 使用 expander 建立獨立區塊，並設定預設為折疊狀態 (expanded=False)
-    with st.expander("📂 點擊展開並調閱雲端歷史紀錄", expanded=False):
-        st.caption("從 Google Sheets 讀取並美化呈現，無需直接看醜醜的試算表。")
+    with st.expander("📂 點擊調閱雲端歷史評核紀錄", expanded=False):
+        st.caption("從 Google Sheets 讀取並美化呈現，無需直接看試算表。")
         
         if st.button("🔄 從雲端載入最新紀錄", use_container_width=True):
             conn, temp_path_or_error = get_gsheets_connection()
@@ -465,7 +507,6 @@ with col_right:
                 with st.spinner("正在下載資料..."):
                     try:
                         df_cloud = conn.read(worksheet="評核紀錄")
-                        # 確保讀出來的是 DataFrame 且清掉全空的列
                         if isinstance(df_cloud, pd.DataFrame):
                             df_cloud = df_cloud.dropna(how='all')
                         else:
@@ -474,7 +515,7 @@ with col_right:
                         st.session_state.cloud_data_cache = df_cloud
                         
                         if df_cloud.empty:
-                            st.warning("✅ 連線成功，但目前雲端資料庫是空的喔！請先在左側完成評分並上傳。")
+                            st.warning("✅ 連線成功，但目前雲端資料庫是空的喔！")
                         else:
                             st.success(f"✅ 載入成功！共找到 {len(df_cloud)} 筆資料。")
                     except Exception as e:
@@ -482,14 +523,12 @@ with col_right:
                     finally:
                         if os.path.exists(temp_path_or_error): os.remove(temp_path_or_error)
 
-        # 根據快取狀態顯示不同畫面
         if st.session_state.cloud_data_cache is not None:
             df = st.session_state.cloud_data_cache
             
             if df.empty:
                 st.info("💡 提示：您目前尚無評核資料，請先去『💰 試算與上傳』分頁上傳一筆新的分數。")
             else:
-                # 提供簡單的篩選器
                 selected_month = st.selectbox("📅 選擇月份", options=["全部"] + list(df['評分日期'].astype(str).str[:7].unique()))
                 
                 if selected_month != "全部":
@@ -497,49 +536,47 @@ with col_right:
                     
                 st.markdown(f"**篩選結果：{len(df)} 筆紀錄**")
                 
-                # 將資料轉化為漂亮的卡片
                 for idx, row in df.iterrows():
                     with st.container():
                         st.markdown(f"""
                         <div class="history-card">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <h4 style="margin:0; color:#1565C0;">👤 {row.get('受評姓名', '未知')} ({row.get('部門', '')} - {row.get('職等', '')})</h4>
-                                <span style="background-color:#E3F2FD; padding:3px 10px; border-radius:15px; font-weight:bold;">總分: {row.get('總分', '')} ({row.get('評等', '')})</span>
+                                <h5 style="margin:0; color:#1565C0; font-weight: 700;">👤 {row.get('受評姓名', '未知')} ({row.get('部門', '')})</h5>
+                                <span style="background-color:#E8F0FE; color:#1967D2; padding:4px 12px; border-radius:20px; font-weight:bold; font-size:14px;">總分: {row.get('總分', '')} ({row.get('評等', '')})</span>
                             </div>
-                            <p style="margin:5px 0 0 0; font-size:12px; color:#666;">評分主管：{row.get('評分主管', '')} | 日期：{row.get('評分日期', '')}</p>
+                            <p style="margin:8px 0 0 0; font-size:13px; color:#5F6368;">職等：{row.get('職等', '')} | 評分主管：{row.get('評分主管', '')} | 日期：{row.get('評分日期', '')}</p>
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        with st.expander("查看詳細各項分數與評語"):
-                            st.markdown("**主管評語：**")
+                        with st.expander("🔍 查看詳細分數與評語"):
+                            st.markdown("**📝 主管評語：**")
                             st.info(row.get('主管評語', '無'))
                             
                             col_d1, col_d2 = st.columns(2)
                             with col_d1:
-                                st.markdown("**A區_基礎評分**")
+                                st.markdown("**🎯 A區_基礎評分**")
                                 st.text(row.get('A區_基礎評分明細', ''))
                             with col_d2:
-                                st.markdown("**B區_挑戰評分**")
+                                st.markdown("**🚀 B區_挑戰評分**")
                                 st.text(row.get('B區_挑戰評分明細', ''))
                                 
-                            st.markdown("**OKR 目標內容**")
+                            st.markdown("**📌 OKR 目標內容**")
                             st.caption(str(row.get('OKR_目標設定與內容', '')).replace('\n', '  \n'))
+                        st.write("") # 卡片間距
         else:
-            # 還沒按過載入按鈕的狀態
             st.info("👆 請點擊上方按鈕載入資料。")
 
 # --- 7. 系統資訊 (Footer) ---
-with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
+with st.container():
     st.markdown("""
-    <div style="text-align: center; color: #666; font-size: 13px;">
+    <div class="footer">
         <p><b>版本歷程</b></p>
-        <ul style="text-align: left; display: inline-block;">
-            <li>v31.2: 將「雲端評核紀錄」移出分頁，調整為獨立預設閉合區塊，優化右側排版。</li>
-            <li>v31.1: 優化歷史儀表板載入邏輯與空資料提示 UX。</li>
-            <li>v31.0: 新增「歷史儀表板」功能，在系統內直接美化呈現 Google Sheets 資料。</li>
-            <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊。</li>
+        <ul style="list-style-type: none; padding: 0; display: inline-block; text-align: left; font-size: 11px;">
+            <li>v32.0: 全面升級現代化 UI、優化空間佈局與視覺層次。</li>
+            <li>v31.2: 將「雲端評核紀錄」移出分頁，調整為獨立預設閉合區塊。</li>
+            <li>v31.0: 新增「歷史儀表板」功能，美化呈現 Google Sheets 資料。</li>
         </ul>
-        <br>
-        <p>© 2026 馬尼通訊總管理處考核系統</p>
+        <br><br>
+        <p>© 2026 馬尼通訊總管理處 人員評核與績效管理系統</p>
     </div>
     """, unsafe_allow_html=True)
