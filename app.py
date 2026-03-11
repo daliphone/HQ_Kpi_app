@@ -105,30 +105,34 @@ st.markdown("""
         text-transform: uppercase;
     }
 
-    /* 導覽 Radio 按鈕覆蓋 */
+    /* 隱藏 Radio 原始圓點與白色外框容器 */
+    [data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none !important; }
+    [data-testid="stSidebar"] .stRadio > div[data-baseweb="radio-group"] {
+        background: transparent !important; border: none !important;
+        box-shadow: none !important; padding: 0 !important;
+    }
+    /* 導覽項目樣式 */
     [data-testid="stSidebar"] .stRadio label {
         color: var(--text-secondary) !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        padding: 10px 16px !important;
-        border-radius: 8px !important;
-        margin: 2px 0 !important;
-        transition: all 0.15s ease !important;
-        cursor: pointer;
+        font-size: 14px !important; font-weight: 500 !important;
+        padding: 10px 16px !important; border-radius: 8px !important;
+        margin: 2px 0 !important; transition: all 0.15s ease !important;
+        cursor: pointer; display: block !important; width: 100% !important;
+        border-left: 3px solid transparent !important;
     }
     [data-testid="stSidebar"] .stRadio label:hover {
         background: var(--bg-hover) !important;
         color: var(--text-primary) !important;
     }
-    [data-testid="stSidebar"] [data-baseweb="radio"] input:checked + div + label,
-    [data-testid="stSidebar"] .stRadio [aria-checked="true"] label {
-        background: rgba(77,124,254,0.12) !important;
+    [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] label {
+        background: rgba(59,111,232,0.08) !important;
         color: var(--accent-blue) !important;
         border-left: 3px solid var(--accent-blue) !important;
+        font-weight: 700 !important; padding-left: 13px !important;
     }
     [data-testid="stSidebar"] .stRadio > div {
-        gap: 2px;
-        padding: 0 12px;
+        gap: 2px !important; padding: 0 12px !important;
+        background: transparent !important; border: none !important;
     }
 
     /* ===== 頂部頁面標題列 ===== */
@@ -730,6 +734,11 @@ if 'calculated_score_data' not in st.session_state:
     st.session_state.calculated_score_data = None
 if 'cloud_data_cache' not in st.session_state:
     st.session_state.cloud_data_cache = None
+if 'logo_config' not in st.session_state:
+    st.session_state.logo_config = {
+        "use_image": False, "image_b64": None,
+        "emoji": "💠", "company_name": "馬尼通訊", "system_name": "績效管理系統"
+    }
 
 JOB_LEVELS = ["助理", "專員", "資深專員", "組長", "副理", "經理", "總監"]
 DEPT_LIST   = list(st.session_state.config_data.keys())
@@ -738,11 +747,17 @@ DEPT_LIST   = list(st.session_state.config_data.keys())
 # 側邊欄
 # ==========================================
 with st.sidebar:
-    st.markdown("""
+    lc = st.session_state.logo_config
+    if lc["use_image"] and lc["image_b64"]:
+        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:72px; height:72px; object-fit:contain; border-radius:12px;">'
+    else:
+        logo_html = f'<div class="sidebar-logo-icon">{lc["emoji"]}</div>'
+
+    st.markdown(f"""
     <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">💠</div>
-        <div class="sidebar-logo-title">馬尼通訊</div>
-        <div class="sidebar-logo-sub">績效管理系統</div>
+        {logo_html}
+        <div class="sidebar-logo-title">{lc["company_name"]}</div>
+        <div class="sidebar-logo-sub">{lc["system_name"]}</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1089,13 +1104,13 @@ elif menu == "⚙️ 參數設定":
         <div class="page-header-icon">⚙️</div>
         <div>
             <h2>系統參數維護</h2>
-            <p class="page-header-sub">調整獎金級距、顏色主題與部門考核項目</p>
+            <p class="page-header-sub">調整獎金級距、部門考核項目與品牌識別</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    tab1, tab2 = st.tabs(["💰 獎金級距設定", "📋 部門考核項目"])
+    tab1, tab2, tab3 = st.tabs(["💰 獎金級距設定", "📋 部門考核項目", "🎨 品牌 LOGO 設定"])
 
     with tab1:
         st.caption("修改各等級的最低分門檻、獎金月數與 Hex 顏色碼（建議搭配系統色票）")
@@ -1107,9 +1122,36 @@ elif menu == "⚙️ 參數設定":
         edit_dept = st.selectbox("選擇要修改的部門", options=DEPT_LIST)
         conf      = st.session_state.config_data[edit_dept]
         st.caption(f"目前 {edit_dept} 三區權重配置：A={int(conf['section_weights'][0]*100)}% / B={int(conf['section_weights'][1]*100)}% / C={int(conf['section_weights'][2]*100)}%")
-        st.markdown('<div style="font-size:12px; color:#3DD9BA; font-weight:700; margin: 12px 0 8px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:12px; color:#0EAFA0; font-weight:700; margin: 12px 0 8px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
         ed_a = st.data_editor(pd.DataFrame(conf['basic']), num_rows="dynamic", use_container_width=True)
         st.session_state.config_data[edit_dept]['basic'] = ed_a.to_dict('records')
+
+    with tab3:
+        st.caption("自訂顯示在側邊欄的品牌識別，支援上傳圖片或使用 Emoji 圖示。")
+        lc = st.session_state.logo_config
+        col_lg1, col_lg2 = st.columns([1, 1], gap="large")
+        with col_lg1:
+            new_company = st.text_input("公司名稱", value=lc["company_name"])
+            new_sysname = st.text_input("系統名稱", value=lc["system_name"])
+            new_emoji   = st.text_input("Emoji 圖示（無上傳圖片時顯示）", value=lc["emoji"])
+        with col_lg2:
+            st.markdown('<div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-bottom:8px;">上傳 LOGO 圖片（PNG / JPG，建議正方形）</div>', unsafe_allow_html=True)
+            uploaded_logo = st.file_uploader("上傳 LOGO", type=["png","jpg","jpeg"], label_visibility="collapsed")
+            if uploaded_logo:
+                import base64
+                b64 = base64.b64encode(uploaded_logo.read()).decode()
+                st.session_state.logo_config["image_b64"] = b64
+                st.session_state.logo_config["use_image"] = True
+                st.success("✅ 圖片已上傳，儲存後生效")
+            if lc["use_image"] and lc["image_b64"]:
+                st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:80px; height:80px; object-fit:contain; border-radius:12px; border:1px solid var(--border); margin-top:8px;">', unsafe_allow_html=True)
+                if st.button("🗑 移除圖片，改用 Emoji"):
+                    st.session_state.logo_config["use_image"] = False
+                    st.session_state.logo_config["image_b64"] = None
+                    st.rerun()
+        st.session_state.logo_config["company_name"] = new_company
+        st.session_state.logo_config["system_name"]  = new_sysname
+        st.session_state.logo_config["emoji"]        = new_emoji
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 儲存並套用設定", type="primary"):
