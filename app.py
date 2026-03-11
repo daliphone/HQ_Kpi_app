@@ -170,7 +170,7 @@ def calculate_dynamic_bonus(score, rules_data):
     return "N/A", 0.0, "#000000"
 
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v30.0)")
+st.title("📊 總管理處人員評核系統 (v30.1)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -393,25 +393,61 @@ with col_right:
                 if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
                     try:
                         with st.spinner("正在驗證金鑰與連線..."):
-                            json_str = st.secrets.get("gcp_service_account_json", None)
-                            spreadsheet_url = st.secrets.get("connections", {}).get("gsheets", {}).get("spreadsheet", None)
+                            # v30.1: 兼容兩種 Secrets 設定格式
+                            spreadsheet_url = None
+                            json_str = None
                             
-                            if not json_str or not spreadsheet_url:
-                                st.error("⚠️ 找不到金鑰設定。請確認 Streamlit Secrets 包含 `[connections.gsheets]` 與 `gcp_service_account_json`。")
+                            # 檢查有沒有 spreadsheet 設定
+                            if st.secrets.get("connections") and st.secrets["connections"].get("gsheets"):
+                                spreadsheet_url = st.secrets["connections"]["gsheets"].get("spreadsheet")
+                            
+                            # 檢查有沒有 json_str 設定
+                            if st.secrets.get("gcp_service_account_json"):
+                                json_str = st.secrets.get("gcp_service_account_json")
+                                
+                            # 檢查是否為舊版格式 (直接把金鑰內容寫在 connections.gsheets 下)
+                            is_legacy_format = False
+                            if not json_str and st.secrets.get("connections") and st.secrets["connections"].get("gsheets") and "client_email" in st.secrets["connections"]["gsheets"]:
+                                is_legacy_format = True
+                            
+                            if not spreadsheet_url:
+                                st.error("⚠️ 找不到 spreadsheet 網址設定。請確認 Streamlit Secrets 包含 `[connections.gsheets]` 與 `spreadsheet`。")
                                 st.stop()
                                 
+                            if not json_str and not is_legacy_format:
+                                st.error("⚠️ 找不到金鑰設定。請確認 Streamlit Secrets 包含 `[connections.gsheets]` 與 `gcp_service_account_json` (或舊版格式)。")
+                                st.stop()
+                            
                             temp_key_path = "/tmp/gsheets_key.json"
-                            os.makedirs("/tmp", exist_ok=True)
                             
-                            try:
-                                key_dict = json.loads(json_str)
-                                with open(temp_key_path, "w") as f:
-                                    json.dump(key_dict, f)
-                            except json.JSONDecodeError as je:
-                                st.error("❌ 金鑰內容不是有效的 JSON 格式。")
-                                st.stop()
+                            if is_legacy_format:
+                                # 如果是舊版格式，我們需要手動把 Secrets 轉成 JSON 檔案
+                                try:
+                                    legacy_secrets = dict(st.secrets["connections"]["gsheets"])
+                                    # 移除不屬於 service account 的 key
+                                    legacy_secrets.pop("spreadsheet", None) 
+                                    
+                                    os.makedirs("/tmp", exist_ok=True)
+                                    with open(temp_key_path, "w") as f:
+                                        json.dump(legacy_secrets, f)
+                                        
+                                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
+                                except Exception as e:
+                                    st.error(f"❌ 解析舊版金鑰格式失敗: {e}")
+                                    st.stop()
+                            else:
+                                # 如果是新版格式，直接把字串轉成 JSON 檔案
+                                os.makedirs("/tmp", exist_ok=True)
+                                try:
+                                    key_dict = json.loads(json_str)
+                                    with open(temp_key_path, "w") as f:
+                                        json.dump(key_dict, f)
+                                        
+                                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
+                                except json.JSONDecodeError as je:
+                                    st.error("❌ 金鑰內容不是有效的 JSON 格式。")
+                                    st.stop()
                                 
-                            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
                             conn = st.connection("gsheets", type=GSheetsConnection)
                         
                         with st.spinner("正在讀取試算表資料..."):
@@ -461,6 +497,7 @@ with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
+            <li>v30.1: 兼容新舊版 Google Sheets Secrets 設定格式。</li>
             <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊，並加入單項給分明細。</li>
             <li>v29.6: 實作 JSON 實體檔案暫存機制，徹底解決 Secrets 解析錯誤。</li>
             <li>v29.0: 內建法遵紅線 Tooltip、準備 Google Sheets 雲端連動。</li>
