@@ -49,7 +49,6 @@ if 'bonus_rules' not in st.session_state:
         {"grade": "D (不合格)", "min_score": 0, "months": 0.0, "color": "#616161"},
     ]
 
-# *** 核心更新：寫入詳細評分標準與「法遵預警 Tooltip」 ***
 if 'config_data' not in st.session_state:
     ECOMMERCE_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
@@ -67,9 +66,12 @@ if 'config_data' not in st.session_state:
         "threshold": 80,
         "text_a": [
             {"title": "O (目標): 維持優選賣家資格", "content": "1. 確保出貨零失誤\n2. 聊聊回應率維持 95% 以上"},
+            {"title": "訂單正確率標準", "content": "100分: 0% 錯誤\n85分: < 0.5% 錯誤\n60分: > 1.5% 錯誤"},
+            {"title": "聊聊響應標準", "content": "100分: >95%且<30分\n85分: >90%且<1小時\n60分: <85%"}
         ],
         "text_b": [
             {"title": "O (目標): 提升賣場獲利結構", "content": "1. 降低庫存週轉天數\n2. 提高組合商品銷售比重"},
+            {"title": "KR 關鍵結果", "content": "1. 成功去化 3 款滯銷 >90天商品\n2. 提出 2 次競業破盤價分析報告"}
         ]
     }
 
@@ -87,8 +89,15 @@ if 'config_data' not in st.session_state:
             {"item": "KR3: 時事跟風速度", "weight": 0.34, "help": ""}
         ],
         "threshold": 80,
-        "text_a": [{"title": "O (目標): 建立流量護城河", "content": "1. 穩定產出高品質內容\n2. 經營官網長尾流量"}],
-        "text_b": [{"title": "O (目標): 擴大品牌心佔率", "content": "讓馬尼成為台南 3C 資訊首選"}]
+        "text_a": [
+            {"title": "O (目標): 建立流量護城河", "content": "1. 穩定產出高品質內容\n2. 經營官網長尾流量"},
+            {"title": "短影音標準", "content": "100分: 12支 + 觀看破萬\n85分: 12支準時完成\n60分: 數量未達標"},
+            {"title": "SEO文章標準", "content": "100分: 4篇 + 關鍵字上首頁\n85分: 4篇 + 符合SEO結構\n60分: 未產出"}
+        ],
+        "text_b": [
+            {"title": "O (目標): 擴大品牌心佔率", "content": "讓馬尼成為台南 3C 資訊首選"},
+            {"title": "KR 關鍵結果", "content": "1. 打造 1 支互動率 >5% 的影片\n2. 3C 重大新聞發生後 4 小時內產出內容"}
+        ]
     }
 
     DESIGN_TEMPLATE = {
@@ -105,8 +114,15 @@ if 'config_data' not in st.session_state:
             {"item": "KR3: 視覺優化", "weight": 0.34, "help": ""}
         ],
         "threshold": 85,
-        "text_a": [{"title": "O (目標): 視覺傳達精準化", "content": "1. 提升素材點擊率\n2. 減少溝通修改成本"}],
-        "text_b": [{"title": "O (目標): 品牌視覺升級", "content": "導入新工具提升質感與效率"}]
+        "text_a": [
+            {"title": "O (目標): 視覺傳達精準化", "content": "1. 提升素材點擊率\n2. 減少溝通修改成本"},
+            {"title": "時效標準", "content": "100分: 提前1天完稿\n85分: 準時完稿\n0分: 開天窗"},
+            {"title": "修改標準", "content": "100分: 一次過稿\n85分: 修改2次內\n60分: 修改>5次"}
+        ],
+        "text_b": [
+            {"title": "O (目標): 品牌視覺升級", "content": "導入新工具提升質感與效率"},
+            {"title": "KR 關鍵結果", "content": "1. 主動提出 2 款不同風格封面圖測試 CTR\n2. 導入 AI 去背/生成工具縮短工時"}
+        ]
     }
 
     GENERAL_TEMPLATE = {
@@ -152,7 +168,7 @@ def calculate_dynamic_bonus(score, rules_data):
     return "N/A", 0.0, "#000000"
 
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v29)")
+st.title("📊 總管理處人員評核系統 (v29.2)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -199,7 +215,6 @@ with col_mid:
         cols_a = st.columns(2)
         for i, row in enumerate(current_config['basic']):
             with cols_a[i % 2]:
-                # 加入 help 參數，滑鼠移過去會顯示法遵紅線與標準
                 help_text = row.get("help", "")
                 val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", min_value=-100, max_value=100, value=80, step=5, key=f"a_{i}", help=help_text)
                 scores_a.append(val * row['weight'])
@@ -237,7 +252,6 @@ with col_mid:
             }
         }
         
-        # 不適任證據鏈預警
         if final_score < 60:
             st.error(f"⚠️ 警告：總分 {final_score:.2f} 低於及格線，請務必安排面談並留存輔導紀錄 (PIP)。")
         else:
@@ -272,7 +286,6 @@ with col_right:
             with c_b2:
                 bonus_multi = st.number_input("倍率", value=1.0, step=0.1, key="calc_multi")
             
-            # 薪資計算保險絲：獎金最低為 0，不可倒扣底薪
             final_bonus = max(0, bonus_base * grade_months * bonus_multi)
             
             if bonus_base > 0:
@@ -361,14 +374,33 @@ with col_right:
             else:
                 if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
                     try:
-                        # 這裡預留實際連線的程式碼
-                        # conn = st.connection("gsheets", type=GSheetsConnection)
-                        # existing_data = conn.read(worksheet="評核紀錄", usecols=list(range(len(df_export.columns))))
-                        # updated_data = pd.concat([existing_data, df_export], ignore_index=True)
-                        # conn.update(worksheet="評核紀錄", data=updated_data)
-                        st.success("✅ 介面已準備就緒！(待設定 Google 金鑰後即可真實寫入)")
+                        conn = st.connection("gsheets", type=GSheetsConnection)
+                        
+                        with st.spinner("正在與 Google 雲端同步資料..."):
+                            # 1. 嘗試讀取現有資料
+                            try:
+                                existing_data = conn.read(worksheet="評核紀錄")
+                                # 過濾掉完全空白的列
+                                existing_data = existing_data.dropna(how='all') 
+                            except Exception:
+                                existing_data = pd.DataFrame()
+                                
+                            # 2. 自動調和欄位 (Dynamic Column Alignment)
+                            # 如果是全新的試算表，直接寫入新資料的結構
+                            if existing_data.empty:
+                                updated_data = df_export
+                            else:
+                                # 將新資料合併到舊資料下方
+                                # concat 會自動把沒有的欄位填上 NaN (空白)
+                                updated_data = pd.concat([existing_data, df_export], ignore_index=True)
+                                
+                            # 3. 寫回試算表 (覆蓋寫入，包含所有欄位)
+                            conn.update(worksheet="評核紀錄", data=updated_data)
+                            
+                        st.success("✅ 成功！資料已寫入 Google 試算表，新欄位已自動建立。")
+                        
                     except Exception as e:
-                        st.error(f"連線失敗，請檢查 Secrets 金鑰設定：{e}")
+                        st.error(f"❌ 連線或寫入失敗，請檢查 Secrets 金鑰與試算表權限設定。詳細錯誤：{e}")
 
             st.markdown("---")
             if st.button("🗑️ 清空暫存清單", use_container_width=True):
@@ -383,8 +415,9 @@ with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
+            <li>v29.2: 實作 Google Sheets 自動欄位對齊 (Dynamic Column Alignment) 功能。</li>
+            <li>v29.1: 啟用 Google Sheets 真實連線與寫入邏輯。</li>
             <li>v29.0: 內建法遵紅線 Tooltip、準備 Google Sheets 雲端連動。</li>
-            <li>v28.0: 導入 OKR 評分架構，內建全職務法遵預設值。</li>
         </ul>
         <br>
         <p>© 2026 馬尼通訊總管理處考核系統</p>
