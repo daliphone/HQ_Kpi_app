@@ -77,9 +77,9 @@ st.markdown("""
     }
 
     /* 評分區專用 (降飽和的柔和色標) */
-    .header-a { background-color: #F1F8E9; color: #558B2F; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #DCEDC8; margin-bottom: 12px;}
-    .header-b { background-color: #E8EAF6; color: #3F51B5; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #C5CAE9; margin-bottom: 12px;}
-    .header-c { background-color: #FFF3E0; color: #E65100; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #FFE0B2; margin-bottom: 12px;}
+    .header-a { background-color: #F1F8E9; color: #558B2F; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #DCEDC8; margin-bottom: 15px;}
+    .header-b { background-color: #E8EAF6; color: #3F51B5; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #C5CAE9; margin-bottom: 15px;}
+    .header-c { background-color: #FFF3E0; color: #E65100; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #FFE0B2; margin-bottom: 15px;}
     
     /* 小標題 */
     .header-mid-a, .header-mid-b { 
@@ -87,6 +87,27 @@ st.markdown("""
         font-weight: 700; 
         font-size: 14px; 
         margin-bottom: 8px;
+    }
+    
+    /* 評分項目列樣式 */
+    .score-row {
+        background-color: #FAFAFA;
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid #EEEEEE;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    .score-label {
+        font-weight: 600;
+        color: #37474F;
+        font-size: 14px;
+    }
+    .score-weight {
+        font-size: 12px;
+        color: #90A4AE;
+        margin-left: 8px;
     }
     
     /* 獎金看板 (輕量化) */
@@ -329,32 +350,51 @@ if menu == "📝 新增評核":
         with st.form("score_form_v33", border=False):
             st.markdown('<div style="background:white; padding:25px; border-radius:12px; border:1px solid #E0E0E0; margin-bottom: 20px;">', unsafe_allow_html=True)
             
-            # A 區
+            # A 區：改良版排版
             st.markdown(f'<div class="header-a">A. 職務基本標準 (KPI) - 權重 {int(wa*100)}%</div>', unsafe_allow_html=True)
             scores_a = []
-            c1, c2 = st.columns(2)
             for i, row in enumerate(current_config['basic']):
-                with (c1 if i % 2 == 0 else c2):
-                    val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", -100, 100, 80, 5, help=row.get('help',''), key=f"va_{i}")
+                st.markdown(f'<div class="score-row"><span class="score-label">{row["item"]}</span><span class="score-weight">({int(row["weight"]*100)}%)</span></div>', unsafe_allow_html=True)
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    if row.get('help'):
+                        st.caption(f"ℹ️ {row['help']}")
+                    else:
+                        st.caption("請依據實際表現給分")
+                with col2:
+                    val = st.number_input("分數", -100, 100, 80, 5, key=f"va_{i}", label_visibility="collapsed")
                     scores_a.append(val * row['weight'])
+                st.write("") # 增加間距
             
-            st.markdown("<hr style='margin: 20px 0; border-color: #ECEFF1;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 10px 0 20px 0; border-color: #ECEFF1;'>", unsafe_allow_html=True)
             
-            # B 區
+            # B 區：改良版排版
             st.markdown(f'<div class="header-b">B. OKR 關鍵結果 (挑戰) - 權重 {int(wb*100)}%</div>', unsafe_allow_html=True)
             scores_b = []
-            c3, c4 = st.columns(2)
             for i, row in enumerate(current_config['excellent']):
-                with (c3 if i % 2 == 0 else c4):
-                    val = st.number_input(f"{row['item']} ({int(row['weight']*100)}%)", 0, 100, 80, 5, key=f"vb_{i}")
+                st.markdown(f'<div class="score-row"><span class="score-label">{row["item"]}</span><span class="score-weight">({int(row["weight"]*100)}%)</span></div>', unsafe_allow_html=True)
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    if row.get('help'):
+                        st.caption(f"ℹ️ {row['help']}")
+                    else:
+                        st.caption("請評估挑戰目標達成度")
+                with col2:
+                    val = st.number_input("分數", 0, 100, 80, 5, key=f"vb_{i}", label_visibility="collapsed")
                     scores_b.append(val * row['weight'])
+                st.write("")
             
-            st.markdown("<hr style='margin: 20px 0; border-color: #ECEFF1;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 10px 0 20px 0; border-color: #ECEFF1;'>", unsafe_allow_html=True)
             
             # C 區
             st.markdown(f'<div class="header-c">C. 主管綜合評核 - 權重 {int(wc*100)}%</div>', unsafe_allow_html=True)
-            c_mgr_score = st.slider("綜合給分 (1-10)", 1, 10, 8)
-            c_mgr_comment = st.text_area("主管反饋建議 (必填)", placeholder="請輸入評價與建議...")
+            col_c1, col_c2 = st.columns([1, 2])
+            with col_c1:
+                st.markdown("**綜合給分 (1-10)**")
+                c_mgr_score = st.selectbox("綜合給分", options=range(1, 11), index=7, label_visibility="collapsed")
+            with col_c2:
+                st.markdown("**主管反饋建議 (必填)**")
+                c_mgr_comment = st.text_area("主管反饋建議", placeholder="請輸入評價與建議...", height=100, label_visibility="collapsed")
             
             st.markdown("<br>", unsafe_allow_html=True)
             submitted = st.form_submit_button("⚖️ 執行計算並鎖定分數", use_container_width=True, type="primary")
