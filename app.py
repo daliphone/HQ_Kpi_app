@@ -50,552 +50,185 @@ st.markdown("""
         --grade-d:       #8B93B0;
     }
 
-    /* ===== 全域重置 ===== */
-    html, body, [class*="css"] {
-        font-family: 'Noto Sans TC', sans-serif;
-        color: var(--text-primary);
+    /* ===== 消滅所有多餘空白容器框 ===== */
+    [data-testid="stForm"] {
+        border: none !important; padding: 0 !important;
+        background: transparent !important; box-shadow: none !important;
     }
-    .stApp {
-        background-color: var(--bg-base);
-    }
-    #MainMenu { visibility: hidden; }
-    header { visibility: hidden; }
-    .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 3rem !important;
-        max-width: 97%;
-    }
-
-    /* ===== 側邊欄 ===== */
-    [data-testid="stSidebar"] {
-        background-color: var(--bg-surface) !important;
-        border-right: 1px solid var(--border) !important;
-    }
-    [data-testid="stSidebar"] > div:first-child {
-        padding: 0;
-    }
-    [data-testid="stSidebar"] hr {
-        border-color: var(--border) !important;
-        margin: 12px 0 16px 0;
-    }
-
-    /* 側邊欄 Logo 區 */
-    .sidebar-logo {
-        background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%);
-        padding: 28px 20px 22px;
-        border-bottom: 1px solid var(--border);
-        text-align: center;
-    }
-    .sidebar-logo-icon {
-        font-size: 44px;
-        line-height: 1;
-        filter: drop-shadow(0 0 10px rgba(59,111,232,0.25));
-    }
-    .sidebar-logo-title {
-        color: var(--text-primary);
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: 3px;
-        margin: 12px 0 4px 0;
-    }
-    .sidebar-logo-sub {
-        color: var(--text-muted);
-        font-size: 11px;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-    }
-
-    /* 隱藏 Radio 原始圓點與白色外框容器 */
-    [data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none !important; }
-    [data-testid="stSidebar"] .stRadio > div[data-baseweb="radio-group"] {
-        background: transparent !important; border: none !important;
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important; background: transparent !important;
         box-shadow: none !important; padding: 0 !important;
     }
-    /* 導覽項目樣式 */
+
+    /* ===== 全域重置 ===== */
+    html, body, [class*="css"] { font-family: 'Noto Sans TC', sans-serif; color: var(--text-primary); }
+    .stApp { background-color: var(--bg-base); }
+    #MainMenu { visibility: hidden; }
+    header { visibility: hidden; }
+    .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 97%; }
+
+    /* ===== 側邊欄 ===== */
+    [data-testid="stSidebar"] { background-color: var(--bg-surface) !important; border-right: 1px solid var(--border) !important; }
+    [data-testid="stSidebar"] > div:first-child { padding: 0; }
+    [data-testid="stSidebar"] hr { border-color: var(--border) !important; margin: 12px 0 16px 0; }
+
+    /* Logo 區 */
+    .sidebar-logo { background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%); padding: 28px 20px 22px; border-bottom: 1px solid var(--border); text-align: center; }
+    .sidebar-logo-icon { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 10px rgba(59,111,232,0.25)); }
+    .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 12px 0 4px 0; }
+    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+    /* 側邊欄 Radio - 隱藏圓點與白框 */
+    [data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none !important; }
+    [data-testid="stSidebar"] .stRadio > div[data-baseweb="radio-group"] { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
     [data-testid="stSidebar"] .stRadio label {
-        color: var(--text-secondary) !important;
-        font-size: 14px !important; font-weight: 500 !important;
-        padding: 10px 16px !important; border-radius: 8px !important;
-        margin: 2px 0 !important; transition: all 0.15s ease !important;
-        cursor: pointer; display: block !important; width: 100% !important;
+        color: var(--text-secondary) !important; font-size: 14px !important; font-weight: 500 !important;
+        padding: 10px 16px !important; border-radius: 8px !important; margin: 2px 0 !important;
+        transition: all 0.15s ease !important; cursor: pointer; display: block !important; width: 100% !important;
         border-left: 3px solid transparent !important;
     }
-    [data-testid="stSidebar"] .stRadio label:hover {
-        background: var(--bg-hover) !important;
-        color: var(--text-primary) !important;
-    }
+    [data-testid="stSidebar"] .stRadio label:hover { background: var(--bg-hover) !important; color: var(--text-primary) !important; }
     [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] label {
-        background: rgba(59,111,232,0.08) !important;
-        color: var(--accent-blue) !important;
-        border-left: 3px solid var(--accent-blue) !important;
-        font-weight: 700 !important; padding-left: 13px !important;
+        background: rgba(59,111,232,0.08) !important; color: var(--accent-blue) !important;
+        border-left: 3px solid var(--accent-blue) !important; font-weight: 700 !important; padding-left: 13px !important;
     }
-    [data-testid="stSidebar"] .stRadio > div {
-        gap: 2px !important; padding: 0 12px !important;
-        background: transparent !important; border: none !important;
-    }
+    [data-testid="stSidebar"] .stRadio > div { gap: 2px !important; padding: 0 12px !important; background: transparent !important; border: none !important; }
 
-    /* ===== 頂部頁面標題列 ===== */
-    .page-header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 20px 24px;
+    /* ===== 頁面大標題 - 全新設計 ===== */
+    .page-header { position: relative; margin-bottom: 28px; }
+    .page-header-inner {
+        display: flex; align-items: center; gap: 20px;
+        padding: 22px 28px 22px 34px;
         background: var(--bg-surface);
         border: 1px solid var(--border);
-        border-radius: 14px;
-        margin-bottom: 24px;
+        border-radius: 16px; overflow: hidden;
+        box-shadow: 0 2px 12px rgba(59,111,232,0.06);
         position: relative;
-        overflow: hidden;
     }
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+    .page-header-inner::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+        background: linear-gradient(180deg, var(--accent-blue) 0%, var(--accent-teal) 100%);
+        border-radius: 16px 0 0 16px;
     }
-    .page-header-icon {
-        font-size: 28px;
-        line-height: 1;
-        opacity: 0.85;
+    .page-header-inner::after {
+        content: ''; position: absolute; right: -30px; top: -30px;
+        width: 130px; height: 130px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(59,111,232,0.05) 0%, transparent 70%);
     }
-    .page-header h2 {
-        margin: 0;
-        color: var(--text-primary);
-        font-size: 20px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+    .page-header-icon-wrap {
+        width: 54px; height: 54px; flex-shrink: 0;
+        background: linear-gradient(135deg, rgba(59,111,232,0.10) 0%, rgba(14,175,160,0.07) 100%);
+        border: 1px solid rgba(59,111,232,0.16);
+        border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;
     }
-    .page-header-sub {
-        color: var(--text-muted);
-        font-size: 12px;
-        margin: 0;
+    .page-header-text { flex: 1; min-width: 0; }
+    .page-header-text h2 { margin: 0 0 5px 0; color: var(--text-primary); font-size: 22px; font-weight: 800; letter-spacing: 0.2px; line-height: 1.2; }
+    .page-header-text p { margin: 0; color: var(--text-muted); font-size: 13px; }
+    .page-header-badge {
+        margin-left: auto; padding: 5px 14px; flex-shrink: 0;
+        background: rgba(59,111,232,0.07); border: 1px solid rgba(59,111,232,0.16);
+        border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--accent-blue);
+        letter-spacing: 1px; text-transform: uppercase; white-space: nowrap;
     }
 
     /* ===== 通用卡片 ===== */
-    .card {
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 22px;
-        margin-bottom: 16px;
-    }
+    .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
 
-    /* ===== 區塊標題 ===== */
+    /* ===== 步驟標籤 ===== */
     .section-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-muted);
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin: 20px 0 12px 0;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 10px;
+        font-size: 12px; font-weight: 700; color: var(--text-secondary);
+        letter-spacing: 1.5px; text-transform: uppercase;
+        margin: 22px 0 12px 0; padding-bottom: 10px; border-bottom: 1px solid var(--border);
     }
     .section-label span {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        background: var(--bg-elevated);
-        border: 1px solid var(--border-light);
-        border-radius: 5px;
-        text-align: center;
-        line-height: 20px;
-        font-size: 10px;
-        color: var(--text-secondary);
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; background: var(--accent-blue);
+        border-radius: 6px; font-size: 11px; font-weight: 800; color: white; flex-shrink: 0;
+    }
+    .section-label-icon {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; background: var(--bg-elevated);
+        border: 1px solid var(--border-light); border-radius: 6px; font-size: 12px; flex-shrink: 0;
     }
 
     /* ===== 評分區塊標題 ===== */
-    .score-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border-radius: 10px;
-        margin: 0 0 16px 0;
-        border: 1px solid;
-    }
-    .ssh-a {
-        background: rgba(61,217,186,0.06);
-        border-color: rgba(61,217,186,0.2) !important;
-    }
-    .ssh-b {
-        background: rgba(77,124,254,0.06);
-        border-color: rgba(77,124,254,0.2) !important;
-    }
-    .ssh-c {
-        background: rgba(245,166,35,0.06);
-        border-color: rgba(245,166,35,0.2) !important;
-    }
-    .ssh-title { font-weight: 700; font-size: 13px; }
+    .score-section-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-radius: 10px; margin: 0 0 14px 0; border: 1px solid; }
+    .ssh-a { background: rgba(14,175,160,0.05); border-color: rgba(14,175,160,0.22) !important; }
+    .ssh-b { background: rgba(59,111,232,0.05); border-color: rgba(59,111,232,0.22) !important; }
+    .ssh-c { background: rgba(212,130,10,0.05); border-color: rgba(212,130,10,0.22) !important; }
+    .ssh-title { font-weight: 800; font-size: 13px; letter-spacing: 0.3px; }
     .ssh-title-a { color: var(--accent-teal); }
     .ssh-title-b { color: var(--accent-blue); }
     .ssh-title-c { color: var(--accent-amber); }
-    .ssh-badge {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-family: 'DM Mono', monospace;
-    }
-    .ssh-badge-a { background: rgba(61,217,186,0.12); color: var(--accent-teal); }
-    .ssh-badge-b { background: rgba(77,124,254,0.12); color: var(--accent-blue); }
-    .ssh-badge-c { background: rgba(245,166,35,0.12); color: var(--accent-amber); }
+    .ssh-badge { font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 20px; font-family: 'DM Mono', monospace; }
+    .ssh-badge-a { background: rgba(14,175,160,0.11); color: var(--accent-teal); }
+    .ssh-badge-b { background: rgba(59,111,232,0.11); color: var(--accent-blue); }
+    .ssh-badge-c { background: rgba(212,130,10,0.11); color: var(--accent-amber); }
 
     /* ===== 評分項目列 ===== */
-    .score-item {
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 12px 16px;
-        margin-bottom: 10px;
-        transition: border-color 0.15s;
-    }
-    .score-item:hover {
-        border-color: var(--border-light);
-    }
-    .score-item-name {
-        font-weight: 600;
-        font-size: 13px;
-        color: var(--text-primary);
-    }
-    .score-item-weight {
-        font-size: 11px;
-        color: var(--text-muted);
-        font-family: 'DM Mono', monospace;
-        margin-left: 6px;
-    }
-    .score-item-help {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-top: 4px;
-        line-height: 1.4;
-    }
-    .score-item-help.warning {
-        color: var(--accent-amber);
-        opacity: 0.9;
-    }
+    .score-item { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px 10px; margin-bottom: 8px; transition: border-color 0.15s, box-shadow 0.15s; }
+    .score-item:hover { border-color: var(--border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .score-item-name { font-weight: 700; font-size: 13px; color: var(--text-primary); }
+    .score-item-weight { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-left: 6px; }
+    .score-item-help { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+    .score-item-help.warning { color: #9A5E00; background: rgba(212,130,10,0.08); padding: 3px 8px; border-radius: 5px; display: inline-block; margin-top: 5px; }
 
     /* ===== 結果看板 ===== */
-    .result-panel {
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 28px 24px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-    .result-panel::after {
-        content: '';
-        position: absolute;
-        bottom: -40px; right: -40px;
-        width: 120px; height: 120px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(59,111,232,0.06) 0%, transparent 70%);
-    }
-    .result-score-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-muted);
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-    }
-    .result-score-value {
-        font-size: 56px;
-        font-weight: 900;
-        color: var(--text-primary);
-        line-height: 1;
-        font-family: 'DM Mono', monospace;
-        margin-bottom: 14px;
-    }
-    .result-grade-badge {
-        display: inline-block;
-        padding: 6px 20px;
-        border-radius: 24px;
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        margin-bottom: 10px;
-    }
-    .result-bonus-text {
-        font-size: 13px;
-        color: var(--text-secondary);
-        margin-top: 6px;
-    }
+    .result-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 2px 12px rgba(59,111,232,0.06); }
+    .result-panel::after { content: ''; position: absolute; bottom: -40px; right: -40px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(59,111,232,0.06) 0%, transparent 70%); }
+    .result-score-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .result-score-value { font-size: 56px; font-weight: 900; color: var(--text-primary); line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 14px; }
+    .result-grade-badge { display: inline-block; padding: 6px 20px; border-radius: 24px; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .result-bonus-text { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
 
     /* ===== 歷史卡片 ===== */
-    .history-card {
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 18px;
-        margin-bottom: 12px;
-        transition: all 0.2s ease;
-        cursor: default;
-    }
-    .history-card:hover {
-        border-color: var(--accent-blue);
-        background: var(--bg-elevated);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(59,111,232,0.10);
-    }
-    .history-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-    }
-    .history-card-name {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-    .history-card-dept {
-        font-size: 11px;
-        color: var(--text-muted);
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        padding: 2px 8px;
-        border-radius: 6px;
-    }
-    .history-card-score {
-        font-size: 28px;
-        font-weight: 900;
-        color: var(--text-primary);
-        font-family: 'DM Mono', monospace;
-        line-height: 1;
-    }
-    .history-card-grade {
-        font-size: 11px;
-        font-weight: 600;
-        margin-left: 6px;
-        color: var(--text-muted);
-    }
-    .history-card-meta {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-top: 8px;
-    }
-    .history-card-comment {
-        font-size: 12px;
-        color: var(--text-secondary);
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid var(--border);
-        line-height: 1.5;
-        font-style: italic;
-    }
-
-    /* ===== 獎金等級標記 ===== */
-    .grade-pill {
-        display: inline-block;
-        padding: 2px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 700;
-    }
+    .history-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; transition: all 0.2s ease; }
+    .history-card:hover { border-color: var(--accent-blue); background: #FAFBFF; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(59,111,232,0.10); }
+    .history-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .history-card-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .history-card-dept { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .history-card-score { font-size: 28px; font-weight: 900; color: var(--text-primary); font-family: 'DM Mono', monospace; line-height: 1; }
+    .history-card-grade { font-size: 11px; font-weight: 600; margin-left: 6px; }
+    .history-card-meta { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+    .history-card-comment { font-size: 12px; color: var(--text-secondary); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); line-height: 1.5; font-style: italic; }
 
     /* ===== Streamlit 元件覆蓋 ===== */
-    /* 輸入框 */
-    .stTextInput input, .stNumberInput input, .stTextArea textarea, .stSelectbox select {
-        background-color: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        color: var(--text-primary) !important;
-        font-family: 'Noto Sans TC', sans-serif !important;
+    .stTextInput input, .stNumberInput input, .stTextArea textarea {
+        background-color: var(--bg-surface) !important; border: 1px solid var(--border) !important;
+        border-radius: 8px !important; color: var(--text-primary) !important;
+        font-family: 'Noto Sans TC', sans-serif !important; font-size: 14px !important;
     }
-    .stTextInput input:focus, .stNumberInput input:focus,
-    .stTextArea textarea:focus {
-        border-color: var(--accent-blue) !important;
-        box-shadow: 0 0 0 2px rgba(77,124,254,0.15) !important;
+    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+        border-color: var(--accent-blue) !important; box-shadow: 0 0 0 3px rgba(59,111,232,0.10) !important;
     }
-    .stTextInput label, .stNumberInput label, .stTextArea label,
-    .stSelectbox label, .stDateInput label {
-        color: var(--text-secondary) !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.5px !important;
+    .stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label, .stDateInput label {
+        color: var(--text-secondary) !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.5px !important;
     }
-
-    /* 按鈕 */
-    .stButton > button {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border-light) !important;
-        color: var(--text-secondary) !important;
-        border-radius: 8px !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-        transition: all 0.15s !important;
-    }
-    .stButton > button:hover {
-        background: var(--bg-hover) !important;
-        border-color: var(--accent-blue) !important;
-        color: var(--text-primary) !important;
-    }
-    .stButton > button[kind="primary"] {
-        background: var(--accent-blue) !important;
-        border-color: var(--accent-blue) !important;
-        color: white !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        background: #2C5ED4 !important;
-        box-shadow: 0 4px 12px rgba(59,111,232,0.3) !important;
-    }
-
-    /* Form submit button */
-    .stFormSubmitButton > button {
-        background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important;
-        border: none !important;
-        color: white !important;
-        font-size: 14px !important;
-        font-weight: 700 !important;
-        padding: 14px !important;
-        border-radius: 10px !important;
-        letter-spacing: 0.5px !important;
-        box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important;
-        transition: all 0.2s !important;
-    }
-    .stFormSubmitButton > button:hover {
-        box-shadow: 0 6px 20px rgba(59,111,232,0.38) !important;
-        transform: translateY(-1px) !important;
-    }
-
-    /* Expander */
-    [data-testid="stExpander"] {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
-    }
-    [data-testid="stExpander"] summary {
-        color: var(--text-secondary) !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-    }
-
-    /* 表格 */
-    .stDataFrame, [data-testid="stDataEditor"] {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
-    }
-
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        background: var(--bg-elevated) !important;
-        border-radius: 10px !important;
-        padding: 4px !important;
-        gap: 4px !important;
-        border: 1px solid var(--border) !important;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: transparent !important;
-        color: var(--text-secondary) !important;
-        border-radius: 7px !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: var(--bg-surface) !important;
-        color: var(--text-primary) !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
-    }
-
-    /* Info / Error / Success */
-    .stInfo, .stAlert {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
-        color: var(--text-secondary) !important;
-    }
-    .stSuccess {
-        background: rgba(61,217,186,0.08) !important;
-        border: 1px solid rgba(61,217,186,0.2) !important;
-        border-radius: 10px !important;
-        color: var(--accent-teal) !important;
-    }
-    .stError {
-        background: rgba(240,98,146,0.08) !important;
-        border: 1px solid rgba(240,98,146,0.2) !important;
-        border-radius: 10px !important;
-        color: var(--accent-rose) !important;
-    }
-
-    /* Caption */
-    .stCaption, small, caption {
-        color: var(--text-muted) !important;
-        font-size: 11px !important;
-    }
-
-    /* Divider */
-    hr {
-        border-color: var(--border) !important;
-        margin: 16px 0 !important;
-    }
-
-    /* Number input 上下箭頭 */
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-        opacity: 0.5;
-    }
+    .stButton > button { background: var(--bg-surface) !important; border: 1px solid var(--border-light) !important; color: var(--text-secondary) !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 13px !important; transition: all 0.15s !important; }
+    .stButton > button:hover { background: var(--bg-hover) !important; border-color: var(--accent-blue) !important; color: var(--text-primary) !important; }
+    .stButton > button[kind="primary"] { background: var(--accent-blue) !important; border-color: var(--accent-blue) !important; color: white !important; }
+    .stButton > button[kind="primary"]:hover { background: #2C5ED4 !important; box-shadow: 0 4px 12px rgba(59,111,232,0.3) !important; }
+    .stFormSubmitButton > button { background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important; border: none !important; color: white !important; font-size: 14px !important; font-weight: 700 !important; padding: 14px !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important; transition: all 0.2s !important; }
+    .stFormSubmitButton > button:hover { box-shadow: 0 6px 20px rgba(59,111,232,0.38) !important; transform: translateY(-1px) !important; }
+    [data-testid="stExpander"] { background: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
+    [data-testid="stExpander"] summary { color: var(--text-secondary) !important; font-size: 12px !important; font-weight: 600 !important; }
+    .stDataFrame, [data-testid="stDataEditor"] { background: var(--bg-surface) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
+    .stTabs [data-baseweb="tab-list"] { background: var(--bg-elevated) !important; border-radius: 10px !important; padding: 4px !important; gap: 4px !important; border: 1px solid var(--border) !important; }
+    .stTabs [data-baseweb="tab"] { background: transparent !important; color: var(--text-secondary) !important; border-radius: 7px !important; font-weight: 600 !important; font-size: 13px !important; }
+    .stTabs [aria-selected="true"] { background: var(--bg-surface) !important; color: var(--text-primary) !important; box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important; }
+    .stSuccess { background: rgba(14,175,160,0.07) !important; border: 1px solid rgba(14,175,160,0.22) !important; border-radius: 10px !important; }
+    .stError { background: rgba(217,79,122,0.07) !important; border: 1px solid rgba(217,79,122,0.18) !important; border-radius: 10px !important; }
+    .stCaption, small { color: var(--text-muted) !important; font-size: 11px !important; }
+    hr { border-color: var(--border) !important; margin: 16px 0 !important; }
 
     /* 統計徽章 */
-    .stat-badge {
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 14px 18px;
-        text-align: center;
-    }
-    .stat-badge-val {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--text-primary);
-        font-family: 'DM Mono', monospace;
-        line-height: 1;
-    }
-    .stat-badge-lbl {
-        font-size: 10px;
-        color: var(--text-muted);
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-top: 4px;
-    }
-
-    /* 待上傳 badge */
-    .upload-pending {
-        background: rgba(245,166,35,0.1);
-        border: 1px solid rgba(245,166,35,0.25);
-        border-radius: 8px;
-        padding: 10px 16px;
-        color: var(--accent-amber);
-        font-size: 13px;
-        font-weight: 600;
-        margin-top: 12px;
-    }
-
-    /* Selectbox */
-    [data-testid="stSelectbox"] > div > div {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        color: var(--text-primary) !important;
-    }
-
-    /* Date input */
-    [data-testid="stDateInput"] input {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        color: var(--text-primary) !important;
-    }
-
-    /* ===== 滾動條美化 ===== */
+    .stat-badge { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
+    .stat-badge-val { font-size: 26px; font-weight: 800; color: var(--text-primary); font-family: 'DM Mono', monospace; line-height: 1; }
+    .stat-badge-lbl { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 5px; }
+    .upload-pending { background: rgba(212,130,10,0.08); border: 1px solid rgba(212,130,10,0.2); border-radius: 8px; padding: 10px 16px; color: var(--accent-amber); font-size: 13px; font-weight: 600; margin-top: 12px; }
+    [data-testid="stSelectbox"] > div > div { background: var(--bg-surface) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text-primary) !important; }
+    [data-testid="stDateInput"] input { background: var(--bg-surface) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text-primary) !important; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg-base); }
     ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
@@ -783,11 +416,14 @@ with st.sidebar:
 if menu == "📝 新增評核":
     st.markdown("""
     <div class="page-header">
-        <div class="page-header-icon">📝</div>
-        <div>
-            <h2>新增人員評核</h2>
-            <p class="page-header-sub">填寫基本資料與各維度評分，完成後執行計算</p>
+      <div class="page-header-inner">
+        <div class="page-header-icon-wrap">📝</div>
+        <div class="page-header-text">
+          <h2>新增人員評核</h2>
+          <p>填寫基本資料與各維度評分，完成後執行計算</p>
         </div>
+        <div class="page-header-badge">Performance Review</div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -971,11 +607,14 @@ if menu == "📝 新增評核":
 elif menu == "📋 雲端紀錄":
     st.markdown("""
     <div class="page-header">
-        <div class="page-header-icon">📋</div>
-        <div>
-            <h2>雲端評核紀錄資料庫</h2>
-            <p class="page-header-sub">查詢歷史評核資料，管理待上傳佇列</p>
+      <div class="page-header-inner">
+        <div class="page-header-icon-wrap">📋</div>
+        <div class="page-header-text">
+          <h2>雲端評核紀錄資料庫</h2>
+          <p>查詢歷史評核資料，管理待上傳佇列</p>
         </div>
+        <div class="page-header-badge">Cloud Records</div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1101,11 +740,14 @@ elif menu == "📋 雲端紀錄":
 elif menu == "⚙️ 參數設定":
     st.markdown("""
     <div class="page-header">
-        <div class="page-header-icon">⚙️</div>
-        <div>
-            <h2>系統參數維護</h2>
-            <p class="page-header-sub">調整獎金級距、部門考核項目與品牌識別</p>
+      <div class="page-header-inner">
+        <div class="page-header-icon-wrap">⚙️</div>
+        <div class="page-header-text">
+          <h2>系統參數維護</h2>
+          <p>調整獎金級距、部門考核項目與品牌識別</p>
         </div>
+        <div class="page-header-badge">Settings</div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
