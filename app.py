@@ -32,6 +32,7 @@ st.markdown("""
     .result-box { background-color: #FAFAFA; padding: 10px; border-radius: 5px; color: #333; font-size: 22px; font-weight: bold; text-align: center; border: 1px solid #ddd; margin-top: 10px; }
     .grade-badge { font-size: 20px; font-weight: bold; padding: 5px 15px; border-radius: 20px; color: white; display: inline-block; margin: 10px 0;}
     .footer { text-align: center; color: #888; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
+    .history-card { background-color: white; padding: 15px; border-radius: 8px; border-left: 5px solid #1976D2; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -158,6 +159,10 @@ if 'batch_queue' not in st.session_state:
 if 'calculated_score_data' not in st.session_state:
     st.session_state.calculated_score_data = None
 
+# v31.0: 暫存雲端抓下來的歷史資料
+if 'cloud_data_cache' not in st.session_state:
+    st.session_state.cloud_data_cache = None
+
 JOB_LEVELS = ["助理", "專員", "資深專員", "組長", "副理", "經理", "總監"]
 DEPT_LIST = list(st.session_state.config_data.keys())
 
@@ -169,8 +174,45 @@ def calculate_dynamic_bonus(score, rules_data):
             return rule['grade'], rule['months'], rule['color']
     return "N/A", 0.0, "#000000"
 
+# --- 共用連線函式 ---
+def get_gsheets_connection():
+    spreadsheet_url = None
+    json_str = None
+    
+    if st.secrets.get("connections") and st.secrets["connections"].get("gsheets"):
+        spreadsheet_url = st.secrets["connections"]["gsheets"].get("spreadsheet")
+    if st.secrets.get("gcp_service_account_json"):
+        json_str = st.secrets.get("gcp_service_account_json")
+        
+    is_legacy_format = False
+    if not json_str and st.secrets.get("connections") and st.secrets["connections"].get("gsheets") and "client_email" in st.secrets["connections"]["gsheets"]:
+        is_legacy_format = True
+    
+    if not spreadsheet_url or (not json_str and not is_legacy_format):
+        return None, "找不到金鑰設定或網址。"
+    
+    temp_key_path = "/tmp/gsheets_key.json"
+    os.makedirs("/tmp", exist_ok=True)
+    
+    try:
+        if is_legacy_format:
+            legacy_secrets = dict(st.secrets["connections"]["gsheets"])
+            legacy_secrets.pop("spreadsheet", None) 
+            with open(temp_key_path, "w") as f:
+                json.dump(legacy_secrets, f)
+        else:
+            key_dict = json.loads(json_str)
+            with open(temp_key_path, "w") as f:
+                json.dump(key_dict, f)
+                
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        return conn, temp_key_path
+    except Exception as e:
+        return None, str(e)
+
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v30.1)")
+st.title("📊 總管理處人員評核系統 (v31.0)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -246,7 +288,6 @@ with col_mid:
         total_c = mgr_score * 10 
         final_score = (total_a * wa) + (total_b * wb) + (total_c * wc)
         
-        # v30.0 核心更新：捕捉單項分數細節，收納成字串
         a_details = []
         for i, row in enumerate(current_config['basic']):
             a_details.append(f"✓ {row['item']}: {st.session_state[f'a_{i}']}")
@@ -278,13 +319,16 @@ with col_mid:
             st.success(f"計算完成！總分：{final_score:.2f}")
 
 # ==========================================
-# 右欄：4. 獎金試算 & 5. 設定匯出
+# 右欄：4. 獎金試算 & 5. 設定匯出 & 儀表板
 # ==========================================
 with col_right:
-    st.markdown("### 4. 年終獎金試算")
-    with st.container(border=True):
-        st.markdown("##### 💰 級距制計算機")
-        
+    st.markdown("### 4. 獎金試算 & 系統功能")
+    
+    # 將所有右側功能收納進 Tab 中，讓介面更清爽
+    tab_calc, tab_db, tab_settings = st.tabs(["💰 試算與暫存", "📊 歷史儀表板", "⚙️ 設定"])
+
+    # --- Tab 1: 試算與上傳 ---
+    with tab_calc:
         if st.session_state.calculated_score_data:
             current_score = st.session_state.calculated_score_data["score"]
             meta_name = st.session_state.calculated_score_data["meta"]["name"]
@@ -310,16 +354,11 @@ with col_right:
             
             if bonus_base > 0:
                 st.info(f"💵 核定獎金：${int(final_bonus):,}")
-            else:
-                st.caption("請輸入月薪")
-
-            st.markdown("---")
+                
             final_confirm_bonus = st.number_input("最終實發", value=int(final_bonus), step=100, key="calc_final")
             
             if st.button("➕ 加入待匯出清單", type="secondary", use_container_width=True):
                 meta = st.session_state.calculated_score_data["meta"]
-
-                # v30.0 核心更新：將雜亂的多欄位，收納為固定的乾淨欄位
                 full_data = {
                     "評分日期": meta["date"], 
                     "評分主管": meta["supervisor"], 
@@ -334,27 +373,119 @@ with col_right:
                     "B區_挑戰評分明細": meta["b_detail_str"],
                     "OKR_目標設定與內容": meta["text_record_str"]
                 }
-                
                 st.session_state.batch_queue.append(full_data)
                 st.toast(f"✅ {meta['name']} 已加入清單！")
         else:
             st.info("👈 請先在中欄計算總分")
 
-    # --- 設定與匯出 ---
-    st.markdown("### 5. 設定與匯出")
-    tab1, tab2 = st.tabs(["⚙️ 參數設定", "📥 匯出與雲端"])
+        if len(st.session_state.batch_queue) > 0:
+            st.markdown("---")
+            st.markdown("##### 📥 待上傳清單")
+            df_export = pd.DataFrame(st.session_state.batch_queue)
+            st.dataframe(df_export[['受評姓名', '部門', '總分', '評等']], hide_index=True)
+            
+            if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
+                if not HAS_GSHEETS:
+                    st.error("未安裝套件")
+                else:
+                    conn, temp_path_or_error = get_gsheets_connection()
+                    if conn is None:
+                        st.error(temp_path_or_error)
+                    else:
+                        try:
+                            with st.spinner("同步中..."):
+                                existing_data = pd.DataFrame()
+                                try:
+                                    existing_data = conn.read(worksheet="評核紀錄")
+                                    if not isinstance(existing_data, pd.DataFrame):
+                                        existing_data = pd.DataFrame()
+                                    else:
+                                        existing_data = existing_data.dropna(how='all') 
+                                except Exception: pass 
+                                    
+                                if existing_data.empty:
+                                    updated_data = df_export
+                                else:
+                                    updated_data = pd.concat([existing_data, df_export], ignore_index=True)
+                                    
+                                conn.update(worksheet="評核紀錄", data=updated_data)
+                            st.success("✅ 上傳成功！")
+                            st.session_state.batch_queue = [] # 上傳後清空
+                            st.session_state.cloud_data_cache = updated_data # 更新快取
+                        except Exception as e:
+                            st.error(f"寫入失敗：{e}")
+                        finally:
+                            if os.path.exists(temp_path_or_error): os.remove(temp_path_or_error)
+            
+            if st.button("🗑️ 清空清單"):
+                st.session_state.batch_queue = []
+                st.rerun()
 
-    with tab1:
+    # --- Tab 2: 歷史紀錄儀表板 (v31 核心功能) ---
+    with tab_db:
+        st.markdown("##### 雲端資料庫檢視")
+        st.caption("從 Google Sheets 讀取並美化呈現，無需直接看醜醜的試算表。")
+        
+        if st.button("🔄 從雲端載入最新紀錄", use_container_width=True):
+            conn, temp_path_or_error = get_gsheets_connection()
+            if conn is None:
+                st.error(temp_path_or_error)
+            else:
+                with st.spinner("正在下載資料..."):
+                    try:
+                        df_cloud = conn.read(worksheet="評核紀錄")
+                        df_cloud = df_cloud.dropna(how='all')
+                        st.session_state.cloud_data_cache = df_cloud
+                        st.success("✅ 載入成功！")
+                    except Exception as e:
+                        st.error(f"讀取失敗：{e}")
+                    finally:
+                        if os.path.exists(temp_path_or_error): os.remove(temp_path_or_error)
+
+        if st.session_state.cloud_data_cache is not None and not st.session_state.cloud_data_cache.empty:
+            df = st.session_state.cloud_data_cache
+            
+            # 提供簡單的篩選器
+            selected_month = st.selectbox("📅 選擇月份", options=["全部"] + list(df['評分日期'].astype(str).str[:7].unique()))
+            
+            if selected_month != "全部":
+                df = df[df['評分日期'].astype(str).str.startswith(selected_month)]
+                
+            st.markdown(f"**共找到 {len(df)} 筆紀錄**")
+            
+            # 將資料轉化為漂亮的卡片
+            for idx, row in df.iterrows():
+                with st.container():
+                    st.markdown(f"""
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4 style="margin:0; color:#1565C0;">👤 {row.get('受評姓名', '未知')} ({row.get('部門', '')} - {row.get('職等', '')})</h4>
+                            <span style="background-color:#E3F2FD; padding:3px 10px; border-radius:15px; font-weight:bold;">總分: {row.get('總分', '')} ({row.get('評等', '')})</span>
+                        </div>
+                        <p style="margin:5px 0 0 0; font-size:12px; color:#666;">評分主管：{row.get('評分主管', '')} | 日期：{row.get('評分日期', '')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    with st.expander("查看詳細各項分數與評語"):
+                        st.markdown("**主管評語：**")
+                        st.info(row.get('主管評語', '無'))
+                        
+                        col_d1, col_d2 = st.columns(2)
+                        with col_d1:
+                            st.markdown("**A區_基礎評分**")
+                            st.text(row.get('A區_基礎評分明細', ''))
+                        with col_d2:
+                            st.markdown("**B區_挑戰評分**")
+                            st.text(row.get('B區_挑戰評分明細', ''))
+                            
+                        st.markdown("**OKR 目標內容**")
+                        st.caption(str(row.get('OKR_目標設定與內容', '')).replace('\n', '  \n'))
+        else:
+            st.info("尚無資料，請先點擊載入按鈕。")
+
+    # --- Tab 3: 設定 ---
+    with tab_settings:
         st.caption("修改後請按 Enter 套用")
-        with st.expander("年終獎金級距設定", expanded=False):
-            df_bonus = pd.DataFrame(st.session_state.bonus_rules)
-            edited_bonus_rules = st.data_editor(
-                df_bonus, num_rows="dynamic",
-                column_config={"grade": st.column_config.TextColumn("等級名稱", required=True), "min_score": st.column_config.NumberColumn("最低分", min_value=0, max_value=100), "months": st.column_config.NumberColumn("月數", step=0.1), "color": st.column_config.TextColumn("顏色(Hex)", help="#FF0000")},
-                key="editor_bonus"
-            )
-            st.session_state.bonus_rules = edited_bonus_rules.to_dict('records')
-
         with st.expander("部門評分權重 & 項目", expanded=False):
             edit_dept = st.selectbox("選擇部門", options=DEPT_LIST)
             edit_config = st.session_state.config_data[edit_dept]
@@ -377,130 +508,15 @@ with col_right:
         if st.button("🔄 重整套用"):
             st.rerun()
 
-    with tab2:
-        if len(st.session_state.batch_queue) > 0:
-            df_export = pd.DataFrame(st.session_state.batch_queue)
-            st.dataframe(df_export, hide_index=True)
-            csv = df_export.to_csv(index=False).encode('utf-8-sig')
-            
-            st.download_button("📥 下載 Excel/CSV 檔", data=csv, file_name=f"KPI_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="secondary", use_container_width=True)
-            
-            st.markdown("---")
-            st.markdown("##### ☁️ 雲端資料庫 (Google Sheets)")
-            if not HAS_GSHEETS:
-                st.warning("⚠️ 系統尚未安裝 `st-gsheets-connection` 套件，請檢查 `requirements.txt`。")
-            else:
-                if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
-                    try:
-                        with st.spinner("正在驗證金鑰與連線..."):
-                            # v30.1: 兼容兩種 Secrets 設定格式
-                            spreadsheet_url = None
-                            json_str = None
-                            
-                            # 檢查有沒有 spreadsheet 設定
-                            if st.secrets.get("connections") and st.secrets["connections"].get("gsheets"):
-                                spreadsheet_url = st.secrets["connections"]["gsheets"].get("spreadsheet")
-                            
-                            # 檢查有沒有 json_str 設定
-                            if st.secrets.get("gcp_service_account_json"):
-                                json_str = st.secrets.get("gcp_service_account_json")
-                                
-                            # 檢查是否為舊版格式 (直接把金鑰內容寫在 connections.gsheets 下)
-                            is_legacy_format = False
-                            if not json_str and st.secrets.get("connections") and st.secrets["connections"].get("gsheets") and "client_email" in st.secrets["connections"]["gsheets"]:
-                                is_legacy_format = True
-                            
-                            if not spreadsheet_url:
-                                st.error("⚠️ 找不到 spreadsheet 網址設定。請確認 Streamlit Secrets 包含 `[connections.gsheets]` 與 `spreadsheet`。")
-                                st.stop()
-                                
-                            if not json_str and not is_legacy_format:
-                                st.error("⚠️ 找不到金鑰設定。請確認 Streamlit Secrets 包含 `[connections.gsheets]` 與 `gcp_service_account_json` (或舊版格式)。")
-                                st.stop()
-                            
-                            temp_key_path = "/tmp/gsheets_key.json"
-                            
-                            if is_legacy_format:
-                                # 如果是舊版格式，我們需要手動把 Secrets 轉成 JSON 檔案
-                                try:
-                                    legacy_secrets = dict(st.secrets["connections"]["gsheets"])
-                                    # 移除不屬於 service account 的 key
-                                    legacy_secrets.pop("spreadsheet", None) 
-                                    
-                                    os.makedirs("/tmp", exist_ok=True)
-                                    with open(temp_key_path, "w") as f:
-                                        json.dump(legacy_secrets, f)
-                                        
-                                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
-                                except Exception as e:
-                                    st.error(f"❌ 解析舊版金鑰格式失敗: {e}")
-                                    st.stop()
-                            else:
-                                # 如果是新版格式，直接把字串轉成 JSON 檔案
-                                os.makedirs("/tmp", exist_ok=True)
-                                try:
-                                    key_dict = json.loads(json_str)
-                                    with open(temp_key_path, "w") as f:
-                                        json.dump(key_dict, f)
-                                        
-                                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
-                                except json.JSONDecodeError as je:
-                                    st.error("❌ 金鑰內容不是有效的 JSON 格式。")
-                                    st.stop()
-                                
-                            conn = st.connection("gsheets", type=GSheetsConnection)
-                        
-                        with st.spinner("正在讀取試算表資料..."):
-                            existing_data = pd.DataFrame()
-                            try:
-                                existing_data = conn.read(worksheet="評核紀錄")
-                                if not isinstance(existing_data, pd.DataFrame):
-                                    existing_data = pd.DataFrame()
-                                else:
-                                    existing_data = existing_data.dropna(how='all') 
-                            except Exception as read_err:
-                                pass 
-                                
-                            if existing_data.empty:
-                                updated_data = df_export
-                            else:
-                                updated_data = pd.concat([existing_data, df_export], ignore_index=True)
-                                
-                        with st.spinner("正在寫入 Google Sheets..."):
-                            conn.update(worksheet="評核紀錄", data=updated_data)
-                            
-                        st.success("✅ 成功！資料已寫入 Google 試算表。")
-                        
-                        if os.path.exists(temp_key_path):
-                            os.remove(temp_key_path)
-                            
-                    except Exception as e:
-                        error_msg = str(e)
-                        st.error("❌ 連線或寫入失敗！")
-                        if "403" in error_msg or "permission denied" in error_msg.lower():
-                             st.error("【權限不足】請打開試算表，點擊右上角『共用』，將虛擬員工信箱加為『編輯者』。")
-                        elif "404" in error_msg:
-                            st.error("【找不到試算表】請確認您在 Secrets 裡的 spreadsheet 網址是對的。")
-                        else:
-                            st.error(f"詳細錯誤：{error_msg}")
-                            
-            st.markdown("---")
-            if st.button("🗑️ 清空暫存清單", use_container_width=True):
-                st.session_state.batch_queue = []
-                st.rerun()
-        else:
-            st.info("尚無資料加入清單")
-
 # --- 7. 系統資訊 (Footer) ---
 with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
+            <li>v31.0: 新增「歷史儀表板」功能，在系統內直接美化呈現 Google Sheets 資料。</li>
             <li>v30.1: 兼容新舊版 Google Sheets Secrets 設定格式。</li>
             <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊，並加入單項給分明細。</li>
-            <li>v29.6: 實作 JSON 實體檔案暫存機制，徹底解決 Secrets 解析錯誤。</li>
-            <li>v29.0: 內建法遵紅線 Tooltip、準備 Google Sheets 雲端連動。</li>
         </ul>
         <br>
         <p>© 2026 馬尼通訊總管理處考核系統</p>
