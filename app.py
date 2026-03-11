@@ -168,7 +168,7 @@ def calculate_dynamic_bonus(score, rules_data):
     return "N/A", 0.0, "#000000"
 
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v29.2)")
+st.title("📊 總管理處人員評核系統 (v29.3)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -370,37 +370,56 @@ with col_right:
             st.markdown("---")
             st.markdown("##### ☁️ 雲端資料庫 (Google Sheets)")
             if not HAS_GSHEETS:
-                st.warning("⚠️ 請先在 `requirements.txt` 加入 `st-gsheets-connection` 才能啟用雲端功能。")
+                st.warning("⚠️ 系統尚未安裝 `st-gsheets-connection` 套件，請檢查 `requirements.txt`。")
             else:
-                if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
-                    try:
-                        conn = st.connection("gsheets", type=GSheetsConnection)
-                        
-                        with st.spinner("正在與 Google 雲端同步資料..."):
-                            # 1. 嘗試讀取現有資料
-                            try:
-                                existing_data = conn.read(worksheet="評核紀錄")
-                                # 過濾掉完全空白的列
-                                existing_data = existing_data.dropna(how='all') 
-                            except Exception:
-                                existing_data = pd.DataFrame()
-                                
-                            # 2. 自動調和欄位 (Dynamic Column Alignment)
-                            # 如果是全新的試算表，直接寫入新資料的結構
-                            if existing_data.empty:
-                                updated_data = df_export
-                            else:
-                                # 將新資料合併到舊資料下方
-                                # concat 會自動把沒有的欄位填上 NaN (空白)
-                                updated_data = pd.concat([existing_data, df_export], ignore_index=True)
-                                
-                            # 3. 寫回試算表 (覆蓋寫入，包含所有欄位)
-                            conn.update(worksheet="評核紀錄", data=updated_data)
+                # 檢查 Secrets 是否設定
+                has_secrets = False
+                try:
+                    if st.secrets.get("connections") and st.secrets["connections"].get("gsheets"):
+                        has_secrets = True
+                except Exception:
+                    pass
+
+                if not has_secrets:
+                    st.error("⚠️ 尚未設定 Google Sheets 金鑰！請至 Streamlit Cloud 後台 Settings -> Secrets 中設定。")
+                else:
+                    if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
+                        try:
+                            # 1. 建立連線
+                            conn = st.connection("gsheets", type=GSheetsConnection)
                             
-                        st.success("✅ 成功！資料已寫入 Google 試算表，新欄位已自動建立。")
-                        
-                    except Exception as e:
-                        st.error(f"❌ 連線或寫入失敗，請檢查 Secrets 金鑰與試算表權限設定。詳細錯誤：{e}")
+                            with st.spinner("正在與 Google 雲端連線，請稍候..."):
+                                # 2. 嘗試讀取資料
+                                try:
+                                    existing_data = conn.read(worksheet="評核紀錄")
+                                    existing_data = existing_data.dropna(how='all') 
+                                except Exception as read_err:
+                                    st.warning(f"讀取舊資料失敗（若是第一次執行可忽略此訊息）。錯誤細節: {read_err}")
+                                    existing_data = pd.DataFrame()
+                                    
+                                # 3. 合併與寫入
+                                if existing_data.empty:
+                                    updated_data = df_export
+                                else:
+                                    updated_data = pd.concat([existing_data, df_export], ignore_index=True)
+                                    
+                                conn.update(worksheet="評核紀錄", data=updated_data)
+                                
+                            st.success("✅ 成功！資料已寫入 Google 試算表。")
+                            
+                        except Exception as e:
+                            # 更詳細的錯誤訊息輸出
+                            error_msg = str(e)
+                            st.error("❌ 連線或寫入失敗！")
+                            if "insufficient authentication scopes" in error_msg.lower():
+                                st.error("原因：憑證權限不足。請確認您的 JSON 金鑰有正確複製，且服務帳戶已加入試算表的編輯者。")
+                            elif "cannot find spreadsheet" in error_msg.lower():
+                                st.error("原因：找不到試算表。請確認 Secrets 中的 spreadsheet 網址是否正確。")
+                            elif "worksheet" in error_msg.lower():
+                                st.error("原因：找不到名為『評核紀錄』的工作表。請確認您的 Google 試算表左下角頁籤名稱。")
+                            else:
+                                st.error(f"詳細錯誤：{error_msg}")
+                                st.info("建議檢查：1. JSON 格式是否轉換正確。 2. private_key 的換行格式是否正確。")
 
             st.markdown("---")
             if st.button("🗑️ 清空暫存清單", use_container_width=True):
@@ -415,6 +434,7 @@ with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
+            <li>v29.3: 增強 Google Sheets 連線錯誤捕捉與提示。</li>
             <li>v29.2: 實作 Google Sheets 自動欄位對齊 (Dynamic Column Alignment) 功能。</li>
             <li>v29.1: 啟用 Google Sheets 真實連線與寫入邏輯。</li>
             <li>v29.0: 內建法遵紅線 Tooltip、準備 Google Sheets 雲端連動。</li>
