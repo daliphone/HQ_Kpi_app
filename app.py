@@ -159,7 +159,7 @@ if 'batch_queue' not in st.session_state:
 if 'calculated_score_data' not in st.session_state:
     st.session_state.calculated_score_data = None
 
-# v31.0: 暫存雲端抓下來的歷史資料
+# 暫存雲端抓下來的歷史資料
 if 'cloud_data_cache' not in st.session_state:
     st.session_state.cloud_data_cache = None
 
@@ -212,7 +212,7 @@ def get_gsheets_connection():
         return None, str(e)
 
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v31.0)")
+st.title("📊 總管理處人員評核系統 (v31.1)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -411,7 +411,7 @@ with col_right:
                                 conn.update(worksheet="評核紀錄", data=updated_data)
                             st.success("✅ 上傳成功！")
                             st.session_state.batch_queue = [] # 上傳後清空
-                            st.session_state.cloud_data_cache = updated_data # 更新快取
+                            st.session_state.cloud_data_cache = updated_data # 更新快取，立刻顯示
                         except Exception as e:
                             st.error(f"寫入失敗：{e}")
                         finally:
@@ -421,7 +421,7 @@ with col_right:
                 st.session_state.batch_queue = []
                 st.rerun()
 
-    # --- Tab 2: 歷史紀錄儀表板 (v31 核心功能) ---
+    # --- Tab 2: 歷史紀錄儀表板 (v31.1 UX優化版) ---
     with tab_db:
         st.markdown("##### 雲端資料庫檢視")
         st.caption("從 Google Sheets 讀取並美化呈現，無需直接看醜醜的試算表。")
@@ -434,54 +434,69 @@ with col_right:
                 with st.spinner("正在下載資料..."):
                     try:
                         df_cloud = conn.read(worksheet="評核紀錄")
-                        df_cloud = df_cloud.dropna(how='all')
+                        # 確保讀出來的是 DataFrame 且清掉全空的列
+                        if isinstance(df_cloud, pd.DataFrame):
+                            df_cloud = df_cloud.dropna(how='all')
+                        else:
+                            df_cloud = pd.DataFrame()
+                            
                         st.session_state.cloud_data_cache = df_cloud
-                        st.success("✅ 載入成功！")
+                        
+                        # v31.1: 更精準的訊息提示
+                        if df_cloud.empty:
+                            st.warning("✅ 連線成功，但目前雲端資料庫是空的喔！請先在左側完成評分並上傳。")
+                        else:
+                            st.success(f"✅ 載入成功！共找到 {len(df_cloud)} 筆資料。")
                     except Exception as e:
                         st.error(f"讀取失敗：{e}")
                     finally:
                         if os.path.exists(temp_path_or_error): os.remove(temp_path_or_error)
 
-        if st.session_state.cloud_data_cache is not None and not st.session_state.cloud_data_cache.empty:
+        # 根據快取狀態顯示不同畫面
+        if st.session_state.cloud_data_cache is not None:
             df = st.session_state.cloud_data_cache
             
-            # 提供簡單的篩選器
-            selected_month = st.selectbox("📅 選擇月份", options=["全部"] + list(df['評分日期'].astype(str).str[:7].unique()))
-            
-            if selected_month != "全部":
-                df = df[df['評分日期'].astype(str).str.startswith(selected_month)]
+            if df.empty:
+                st.info("💡 提示：您在上一個步驟已經清空了 Google Sheets，請先去『💰 試算與暫存』分頁上傳一筆新的分數。")
+            else:
+                # 提供簡單的篩選器
+                selected_month = st.selectbox("📅 選擇月份", options=["全部"] + list(df['評分日期'].astype(str).str[:7].unique()))
                 
-            st.markdown(f"**共找到 {len(df)} 筆紀錄**")
-            
-            # 將資料轉化為漂亮的卡片
-            for idx, row in df.iterrows():
-                with st.container():
-                    st.markdown(f"""
-                    <div class="history-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4 style="margin:0; color:#1565C0;">👤 {row.get('受評姓名', '未知')} ({row.get('部門', '')} - {row.get('職等', '')})</h4>
-                            <span style="background-color:#E3F2FD; padding:3px 10px; border-radius:15px; font-weight:bold;">總分: {row.get('總分', '')} ({row.get('評等', '')})</span>
-                        </div>
-                        <p style="margin:5px 0 0 0; font-size:12px; color:#666;">評分主管：{row.get('評分主管', '')} | 日期：{row.get('評分日期', '')}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                if selected_month != "全部":
+                    df = df[df['評分日期'].astype(str).str.startswith(selected_month)]
                     
-                    with st.expander("查看詳細各項分數與評語"):
-                        st.markdown("**主管評語：**")
-                        st.info(row.get('主管評語', '無'))
+                st.markdown(f"**篩選結果：{len(df)} 筆紀錄**")
+                
+                # 將資料轉化為漂亮的卡片
+                for idx, row in df.iterrows():
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="history-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h4 style="margin:0; color:#1565C0;">👤 {row.get('受評姓名', '未知')} ({row.get('部門', '')} - {row.get('職等', '')})</h4>
+                                <span style="background-color:#E3F2FD; padding:3px 10px; border-radius:15px; font-weight:bold;">總分: {row.get('總分', '')} ({row.get('評等', '')})</span>
+                            </div>
+                            <p style="margin:5px 0 0 0; font-size:12px; color:#666;">評分主管：{row.get('評分主管', '')} | 日期：{row.get('評分日期', '')}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
                         
-                        col_d1, col_d2 = st.columns(2)
-                        with col_d1:
-                            st.markdown("**A區_基礎評分**")
-                            st.text(row.get('A區_基礎評分明細', ''))
-                        with col_d2:
-                            st.markdown("**B區_挑戰評分**")
-                            st.text(row.get('B區_挑戰評分明細', ''))
+                        with st.expander("查看詳細各項分數與評語"):
+                            st.markdown("**主管評語：**")
+                            st.info(row.get('主管評語', '無'))
                             
-                        st.markdown("**OKR 目標內容**")
-                        st.caption(str(row.get('OKR_目標設定與內容', '')).replace('\n', '  \n'))
+                            col_d1, col_d2 = st.columns(2)
+                            with col_d1:
+                                st.markdown("**A區_基礎評分**")
+                                st.text(row.get('A區_基礎評分明細', ''))
+                            with col_d2:
+                                st.markdown("**B區_挑戰評分**")
+                                st.text(row.get('B區_挑戰評分明細', ''))
+                                
+                            st.markdown("**OKR 目標內容**")
+                            st.caption(str(row.get('OKR_目標設定與內容', '')).replace('\n', '  \n'))
         else:
-            st.info("尚無資料，請先點擊載入按鈕。")
+            # 還沒按過載入按鈕的狀態
+            st.info("👆 請點擊上方按鈕載入資料。")
 
     # --- Tab 3: 設定 ---
     with tab_settings:
@@ -514,6 +529,7 @@ with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
+            <li>v31.1: 優化歷史儀表板載入邏輯與空資料提示 UX。</li>
             <li>v31.0: 新增「歷史儀表板」功能，在系統內直接美化呈現 Google Sheets 資料。</li>
             <li>v30.1: 兼容新舊版 Google Sheets Secrets 設定格式。</li>
             <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊，並加入單項給分明細。</li>
