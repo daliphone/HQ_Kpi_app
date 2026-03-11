@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import io
+import os
+import json
 
 # 嘗試載入 Google Sheets 連線套件
 try:
@@ -168,7 +170,7 @@ def calculate_dynamic_bonus(score, rules_data):
     return "N/A", 0.0, "#000000"
 
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v29.4)")
+st.title("📊 總管理處人員評核系統 (v30.0)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -244,11 +246,29 @@ with col_mid:
         total_c = mgr_score * 10 
         final_score = (total_a * wa) + (total_b * wb) + (total_c * wc)
         
+        # v30.0 核心更新：捕捉單項分數細節，收納成字串
+        a_details = []
+        for i, row in enumerate(current_config['basic']):
+            a_details.append(f"✓ {row['item']}: {st.session_state[f'a_{i}']}")
+        
+        b_details = []
+        for i, row in enumerate(current_config['excellent']):
+            b_details.append(f"✓ {row['item']}: {st.session_state[f'b_{i}']}")
+            
+        text_records = []
+        for i, row in enumerate(current_config['text_a']):
+            text_records.append(f"【{row['title']}】\n{st.session_state.get(f'target_a_{input_dept}_{i}', row['content'])}")
+        for i, row in enumerate(current_config['text_b']):
+            text_records.append(f"【{row['title']}】\n{st.session_state.get(f'target_b_{input_dept}_{i}', row['content'])}")
+        
         st.session_state.calculated_score_data = {
             "score": final_score,
             "meta": {
                 "name": input_name, "dept": input_dept, "supervisor": input_supervisor,
-                "date": str(input_date), "level": input_level, "comment": mgr_comment
+                "date": str(input_date), "level": input_level, "comment": mgr_comment,
+                "a_detail_str": "\n".join(a_details),
+                "b_detail_str": "\n".join(b_details),
+                "text_record_str": "\n\n".join(text_records)
             }
         }
         
@@ -298,29 +318,29 @@ with col_right:
             
             if st.button("➕ 加入待匯出清單", type="secondary", use_container_width=True):
                 meta = st.session_state.calculated_score_data["meta"]
-                text_data = {}
-                try:
-                    for i, row in enumerate(current_config['text_a']):
-                        k = f"target_a_{input_dept}_{i}"
-                        text_data[f"A_{row['title']}"] = st.session_state.get(k, row['content'])
-                    for i, row in enumerate(current_config['text_b']):
-                        k = f"target_b_{input_dept}_{i}"
-                        text_data[f"B_{row['title']}"] = st.session_state.get(k, row['content'])
-                except: pass
 
+                # v30.0 核心更新：將雜亂的多欄位，收納為固定的乾淨欄位
                 full_data = {
-                    "評分日期": meta["date"], "評分主管": meta["supervisor"], "受評姓名": meta["name"],
-                    "職等": meta["level"], "部門": meta["dept"], "總分": f"{current_score:.2f}",
-                    "評等": grade_text, "核定月數": str(grade_months), "實得獎金": final_confirm_bonus,
+                    "評分日期": meta["date"], 
+                    "評分主管": meta["supervisor"], 
+                    "受評姓名": meta["name"],
+                    "部門": meta["dept"], 
+                    "職等": meta["level"], 
+                    "總分": f"{current_score:.2f}",
+                    "評等": grade_text, 
+                    "實得獎金": final_confirm_bonus,
                     "主管評語": meta["comment"],
-                    **text_data
+                    "A區_基礎評分明細": meta["a_detail_str"],
+                    "B區_挑戰評分明細": meta["b_detail_str"],
+                    "OKR_目標設定與內容": meta["text_record_str"]
                 }
+                
                 st.session_state.batch_queue.append(full_data)
                 st.toast(f"✅ {meta['name']} 已加入清單！")
         else:
             st.info("👈 請先在中欄計算總分")
 
-    # --- 設定與匯出 (加入 Google Sheets 同步按鈕) ---
+    # --- 設定與匯出 ---
     st.markdown("### 5. 設定與匯出")
     tab1, tab2 = st.tabs(["⚙️ 參數設定", "📥 匯出與雲端"])
 
@@ -363,73 +383,71 @@ with col_right:
             st.dataframe(df_export, hide_index=True)
             csv = df_export.to_csv(index=False).encode('utf-8-sig')
             
-            # 本機 CSV 下載
             st.download_button("📥 下載 Excel/CSV 檔", data=csv, file_name=f"KPI_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="secondary", use_container_width=True)
             
-            # 雲端 Google Sheets 同步
             st.markdown("---")
             st.markdown("##### ☁️ 雲端資料庫 (Google Sheets)")
             if not HAS_GSHEETS:
                 st.warning("⚠️ 系統尚未安裝 `st-gsheets-connection` 套件，請檢查 `requirements.txt`。")
             else:
-                # 檢查 Secrets 是否設定
-                has_secrets = False
-                try:
-                    # 檢查新的 gcp_service_account 設定方式
-                    if st.secrets.get("gcp_service_account") and st.secrets.get("connections", {}).get("gsheets"):
-                         has_secrets = True
-                    # 檢查舊的 connections.gsheets 設定方式
-                    elif st.secrets.get("connections") and st.secrets["connections"].get("gsheets") and "client_email" in st.secrets["connections"]["gsheets"]:
-                        has_secrets = True
-                except Exception:
-                    pass
-
-                if not has_secrets:
-                    st.error("⚠️ 尚未設定 Google Sheets 金鑰！請至 Streamlit Cloud 後台 Settings -> Secrets 中設定。")
-                else:
-                    if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
-                        try:
-                            # 1. 建立連線
-                            conn = st.connection("gsheets", type=GSheetsConnection)
+                if st.button("🚀 批次上傳至 Google Sheets", type="primary", use_container_width=True):
+                    try:
+                        with st.spinner("正在驗證金鑰與連線..."):
+                            json_str = st.secrets.get("gcp_service_account_json", None)
+                            spreadsheet_url = st.secrets.get("connections", {}).get("gsheets", {}).get("spreadsheet", None)
                             
-                            with st.spinner("正在與 Google 雲端連線，請稍候..."):
-                                # 2. 嘗試讀取資料
-                                existing_data = pd.DataFrame()
-                                try:
-                                    existing_data = conn.read(worksheet="評核紀錄")
-                                    # 如果回傳的不是 DataFrame (例如空檔案)，就強制轉成空的 DataFrame
-                                    if not isinstance(existing_data, pd.DataFrame):
-                                        existing_data = pd.DataFrame()
-                                    else:
-                                        existing_data = existing_data.dropna(how='all') 
-                                except Exception as read_err:
-                                    st.warning(f"讀取舊資料失敗（若是第一次執行可忽略此訊息）。錯誤細節: {read_err}")
-                                    
-                                # 3. 合併與寫入
-                                if existing_data.empty:
-                                    updated_data = df_export
-                                else:
-                                    updated_data = pd.concat([existing_data, df_export], ignore_index=True)
-                                    
-                                conn.update(worksheet="評核紀錄", data=updated_data)
+                            if not json_str or not spreadsheet_url:
+                                st.error("⚠️ 找不到金鑰設定。請確認 Streamlit Secrets 包含 `[connections.gsheets]` 與 `gcp_service_account_json`。")
+                                st.stop()
                                 
-                            st.success("✅ 成功！資料已寫入 Google 試算表。")
+                            temp_key_path = "/tmp/gsheets_key.json"
+                            os.makedirs("/tmp", exist_ok=True)
                             
-                        except Exception as e:
-                            # 更詳細的錯誤訊息輸出
-                            error_msg = str(e)
-                            st.error("❌ 連線或寫入失敗！")
-                            if "insufficient authentication scopes" in error_msg.lower() or "permission denied" in error_msg.lower() or "403" in error_msg:
-                                st.error("原因：憑證權限不足。請確認您有將 JSON 金鑰中的 `client_email` 加到 Google 試算表的共用名單，並給予「編輯者」權限。")
-                            elif "cannot find spreadsheet" in error_msg.lower() or "404" in error_msg:
-                                st.error("原因：找不到試算表。請確認 Secrets 中的 spreadsheet 網址是否正確。")
-                            elif "worksheet" in error_msg.lower() or "not found" in error_msg.lower():
-                                st.error("原因：找不到名為『評核紀錄』的工作表。請確認您的 Google 試算表左下角頁籤名稱。")
-                            elif "malformed" in error_msg.lower() or "json" in error_msg.lower() or "key" in error_msg.lower():
-                                st.error("原因：金鑰格式錯誤。請確認 Secrets 設定中是否正確貼上了 JSON 內容，或 private_key 格式是否有誤。")
+                            try:
+                                key_dict = json.loads(json_str)
+                                with open(temp_key_path, "w") as f:
+                                    json.dump(key_dict, f)
+                            except json.JSONDecodeError as je:
+                                st.error("❌ 金鑰內容不是有效的 JSON 格式。")
+                                st.stop()
+                                
+                            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
+                            conn = st.connection("gsheets", type=GSheetsConnection)
+                        
+                        with st.spinner("正在讀取試算表資料..."):
+                            existing_data = pd.DataFrame()
+                            try:
+                                existing_data = conn.read(worksheet="評核紀錄")
+                                if not isinstance(existing_data, pd.DataFrame):
+                                    existing_data = pd.DataFrame()
+                                else:
+                                    existing_data = existing_data.dropna(how='all') 
+                            except Exception as read_err:
+                                pass 
+                                
+                            if existing_data.empty:
+                                updated_data = df_export
                             else:
-                                st.error(f"詳細錯誤：{error_msg}")
-
+                                updated_data = pd.concat([existing_data, df_export], ignore_index=True)
+                                
+                        with st.spinner("正在寫入 Google Sheets..."):
+                            conn.update(worksheet="評核紀錄", data=updated_data)
+                            
+                        st.success("✅ 成功！資料已寫入 Google 試算表。")
+                        
+                        if os.path.exists(temp_key_path):
+                            os.remove(temp_key_path)
+                            
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error("❌ 連線或寫入失敗！")
+                        if "403" in error_msg or "permission denied" in error_msg.lower():
+                             st.error("【權限不足】請打開試算表，點擊右上角『共用』，將虛擬員工信箱加為『編輯者』。")
+                        elif "404" in error_msg:
+                            st.error("【找不到試算表】請確認您在 Secrets 裡的 spreadsheet 網址是對的。")
+                        else:
+                            st.error(f"詳細錯誤：{error_msg}")
+                            
             st.markdown("---")
             if st.button("🗑️ 清空暫存清單", use_container_width=True):
                 st.session_state.batch_queue = []
@@ -443,10 +461,8 @@ with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
-            <li>v29.4: 增強 Google Sheets 連線，支援直接讀取 JSON 格式金鑰，修復詳細錯誤未顯示問題。</li>
-            <li>v29.3: 增強 Google Sheets 連線錯誤捕捉與提示。</li>
-            <li>v29.2: 實作 Google Sheets 自動欄位對齊 (Dynamic Column Alignment) 功能。</li>
-            <li>v29.1: 啟用 Google Sheets 真實連線與寫入邏輯。</li>
+            <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊，並加入單項給分明細。</li>
+            <li>v29.6: 實作 JSON 實體檔案暫存機制，徹底解決 Secrets 解析錯誤。</li>
             <li>v29.0: 內建法遵紅線 Tooltip、準備 Google Sheets 雲端連動。</li>
         </ul>
         <br>
