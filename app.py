@@ -26,28 +26,28 @@ st.markdown("""
     /* ===== 字體引入 ===== */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap');
 
-    /* ===== CSS 變數 ===== */
+    /* ===== CSS 變數 (淺色系) ===== */
     :root {
-        --bg-base:       #0F1117;
-        --bg-surface:    #171B26;
-        --bg-elevated:   #1E2333;
-        --bg-hover:      #252B3B;
-        --border:        #2A3045;
-        --border-light:  #323A52;
-        --text-primary:  #E8EBF4;
-        --text-secondary:#8B92A9;
-        --text-muted:    #545D7A;
-        --accent-blue:   #4D7CFE;
-        --accent-teal:   #3DD9BA;
-        --accent-amber:  #F5A623;
-        --accent-rose:   #F06292;
-        --accent-violet: #9C7AF7;
-        --grade-s:       #F06292;
-        --grade-a:       #9C7AF7;
-        --grade-b+:      #4D7CFE;
-        --grade-b:       #3DD9BA;
-        --grade-c:       #F5A623;
-        --grade-d:       #545D7A;
+        --bg-base:       #F0F2F7;
+        --bg-surface:    #FFFFFF;
+        --bg-elevated:   #F7F8FC;
+        --bg-hover:      #EEF0F8;
+        --border:        #DDE1EE;
+        --border-light:  #C8CEDE;
+        --text-primary:  #1A1F36;
+        --text-secondary:#4A5178;
+        --text-muted:    #8B93B0;
+        --accent-blue:   #3B6FE8;
+        --accent-teal:   #0EAFA0;
+        --accent-amber:  #D4820A;
+        --accent-rose:   #D94F7A;
+        --accent-violet: #6C4FD4;
+        --grade-s:       #D94F7A;
+        --grade-a:       #6C4FD4;
+        --grade-b+:      #3B6FE8;
+        --grade-b:       #0EAFA0;
+        --grade-c:       #D4820A;
+        --grade-d:       #8B93B0;
     }
 
     /* ===== 全域重置 ===== */
@@ -81,7 +81,7 @@ st.markdown("""
 
     /* 側邊欄 Logo 區 */
     .sidebar-logo {
-        background: linear-gradient(135deg, #1a2040 0%, #0F1117 100%);
+        background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%);
         padding: 28px 20px 22px;
         border-bottom: 1px solid var(--border);
         text-align: center;
@@ -89,7 +89,7 @@ st.markdown("""
     .sidebar-logo-icon {
         font-size: 44px;
         line-height: 1;
-        filter: drop-shadow(0 0 16px rgba(77,124,254,0.5));
+        filter: drop-shadow(0 0 10px rgba(59,111,232,0.25));
     }
     .sidebar-logo-title {
         color: var(--text-primary);
@@ -292,7 +292,7 @@ st.markdown("""
         bottom: -40px; right: -40px;
         width: 120px; height: 120px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(77,124,254,0.08) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(59,111,232,0.06) 0%, transparent 70%);
     }
     .result-score-label {
         font-size: 11px;
@@ -336,10 +336,10 @@ st.markdown("""
         cursor: default;
     }
     .history-card:hover {
-        border-color: var(--border-light);
+        border-color: var(--accent-blue);
         background: var(--bg-elevated);
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        box-shadow: 0 8px 24px rgba(59,111,232,0.10);
     }
     .history-card-header {
         display: flex;
@@ -440,8 +440,8 @@ st.markdown("""
         color: white !important;
     }
     .stButton > button[kind="primary"]:hover {
-        background: #3D6CE8 !important;
-        box-shadow: 0 4px 12px rgba(77,124,254,0.35) !important;
+        background: #2C5ED4 !important;
+        box-shadow: 0 4px 12px rgba(59,111,232,0.3) !important;
     }
 
     /* Form submit button */
@@ -454,11 +454,11 @@ st.markdown("""
         padding: 14px !important;
         border-radius: 10px !important;
         letter-spacing: 0.5px !important;
-        box-shadow: 0 4px 16px rgba(77,124,254,0.3) !important;
+        box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important;
         transition: all 0.2s !important;
     }
     .stFormSubmitButton > button:hover {
-        box-shadow: 0 6px 24px rgba(77,124,254,0.45) !important;
+        box-shadow: 0 6px 20px rgba(59,111,232,0.38) !important;
         transform: translateY(-1px) !important;
     }
 
