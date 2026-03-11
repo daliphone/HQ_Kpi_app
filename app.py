@@ -212,7 +212,7 @@ def get_gsheets_connection():
         return None, str(e)
 
 # --- 6. 主標題 ---
-st.title("📊 總管理處人員評核系統 (v31.1)")
+st.title("📊 總管理處人員評核系統 (v31.2)")
 
 # --- 7. 版面佈局 ---
 col_left, col_mid, col_right = st.columns([0.8, 1.5, 0.7], gap="medium")
@@ -319,13 +319,13 @@ with col_mid:
             st.success(f"計算完成！總分：{final_score:.2f}")
 
 # ==========================================
-# 右欄：4. 獎金試算 & 5. 設定匯出 & 儀表板
+# 右欄：4. 獎金試算 & 5. 雲端評核紀錄
 # ==========================================
 with col_right:
-    st.markdown("### 4. 獎金試算 & 系統功能")
+    st.markdown("### 4. 獎金試算 & 設定")
     
-    # 將所有右側功能收納進 Tab 中，讓介面更清爽
-    tab_calc, tab_db, tab_settings = st.tabs(["💰 試算與暫存", "📊 歷史儀表板", "⚙️ 設定"])
+    # 將歷史儀表板移出，這裡只保留操作型功能
+    tab_calc, tab_settings = st.tabs(["💰 試算與上傳", "⚙️ 參數設定"])
 
     # --- Tab 1: 試算與上傳 ---
     with tab_calc:
@@ -421,9 +421,40 @@ with col_right:
                 st.session_state.batch_queue = []
                 st.rerun()
 
-    # --- Tab 2: 歷史紀錄儀表板 (v31.1 UX優化版) ---
-    with tab_db:
-        st.markdown("##### 雲端資料庫檢視")
+    # --- Tab 2: 設定 ---
+    with tab_settings:
+        st.caption("修改後請按 Enter 套用")
+        with st.expander("部門評分權重 & 項目", expanded=False):
+            edit_dept = st.selectbox("選擇部門", options=DEPT_LIST)
+            edit_config = st.session_state.config_data[edit_dept]
+            c_w1, c_w2, c_w3 = st.columns(3)
+            nw_a = c_w1.number_input("A區權重", value=edit_config['section_weights'][0], step=0.05)
+            nw_b = c_w2.number_input("B區權重", value=edit_config['section_weights'][1], step=0.05)
+            nw_c = c_w3.number_input("C區權重", value=edit_config['section_weights'][2], step=0.05)
+            st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
+            
+            st.caption("A區細項 (KPI - 基礎)")
+            df_b = pd.DataFrame(edit_config['basic'])
+            ed_b = st.data_editor(df_b, num_rows="dynamic", key="ed_b")
+            st.session_state.config_data[edit_dept]['basic'] = ed_b.to_dict('records')
+            
+            st.caption("B區細項 (OKR - 挑戰)")
+            df_e = pd.DataFrame(edit_config['excellent'])
+            ed_e = st.data_editor(df_e, num_rows="dynamic", key="ed_e")
+            st.session_state.config_data[edit_dept]['excellent'] = ed_e.to_dict('records')
+
+        if st.button("🔄 重整套用"):
+            st.rerun()
+
+    st.write("") # 增加一點留白
+    
+    # ==========================================
+    # 獨立區塊：5. 雲端評核紀錄 (預設閉合)
+    # ==========================================
+    st.markdown("### 5. 雲端評核紀錄")
+    
+    # 使用 expander 建立獨立區塊，並設定預設為折疊狀態 (expanded=False)
+    with st.expander("📂 點擊展開並調閱雲端歷史紀錄", expanded=False):
         st.caption("從 Google Sheets 讀取並美化呈現，無需直接看醜醜的試算表。")
         
         if st.button("🔄 從雲端載入最新紀錄", use_container_width=True):
@@ -442,7 +473,6 @@ with col_right:
                             
                         st.session_state.cloud_data_cache = df_cloud
                         
-                        # v31.1: 更精準的訊息提示
                         if df_cloud.empty:
                             st.warning("✅ 連線成功，但目前雲端資料庫是空的喔！請先在左側完成評分並上傳。")
                         else:
@@ -457,7 +487,7 @@ with col_right:
             df = st.session_state.cloud_data_cache
             
             if df.empty:
-                st.info("💡 提示：您在上一個步驟已經清空了 Google Sheets，請先去『💰 試算與暫存』分頁上傳一筆新的分數。")
+                st.info("💡 提示：您目前尚無評核資料，請先去『💰 試算與上傳』分頁上傳一筆新的分數。")
             else:
                 # 提供簡單的篩選器
                 selected_month = st.selectbox("📅 選擇月份", options=["全部"] + list(df['評分日期'].astype(str).str[:7].unique()))
@@ -498,41 +528,16 @@ with col_right:
             # 還沒按過載入按鈕的狀態
             st.info("👆 請點擊上方按鈕載入資料。")
 
-    # --- Tab 3: 設定 ---
-    with tab_settings:
-        st.caption("修改後請按 Enter 套用")
-        with st.expander("部門評分權重 & 項目", expanded=False):
-            edit_dept = st.selectbox("選擇部門", options=DEPT_LIST)
-            edit_config = st.session_state.config_data[edit_dept]
-            c_w1, c_w2, c_w3 = st.columns(3)
-            nw_a = c_w1.number_input("A區權重", value=edit_config['section_weights'][0], step=0.05)
-            nw_b = c_w2.number_input("B區權重", value=edit_config['section_weights'][1], step=0.05)
-            nw_c = c_w3.number_input("C區權重", value=edit_config['section_weights'][2], step=0.05)
-            st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
-            
-            st.caption("A區細項 (KPI - 基礎)")
-            df_b = pd.DataFrame(edit_config['basic'])
-            ed_b = st.data_editor(df_b, num_rows="dynamic", key="ed_b")
-            st.session_state.config_data[edit_dept]['basic'] = ed_b.to_dict('records')
-            
-            st.caption("B區細項 (OKR - 挑戰)")
-            df_e = pd.DataFrame(edit_config['excellent'])
-            ed_e = st.data_editor(df_e, num_rows="dynamic", key="ed_e")
-            st.session_state.config_data[edit_dept]['excellent'] = ed_e.to_dict('records')
-
-        if st.button("🔄 重整套用"):
-            st.rerun()
-
 # --- 7. 系統資訊 (Footer) ---
 with st.expander("ℹ️ 系統資訊 (System Info)", expanded=False):
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 13px;">
         <p><b>版本歷程</b></p>
         <ul style="text-align: left; display: inline-block;">
+            <li>v31.2: 將「雲端評核紀錄」移出分頁，調整為獨立預設閉合區塊，優化右側排版。</li>
             <li>v31.1: 優化歷史儀表板載入邏輯與空資料提示 UX。</li>
             <li>v31.0: 新增「歷史儀表板」功能，在系統內直接美化呈現 Google Sheets 資料。</li>
-            <li>v30.1: 兼容新舊版 Google Sheets Secrets 設定格式。</li>
-            <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊，並加入單項給分明細。</li>
+            <li>v30.0: 優化 Google Sheets 匯出格式，將各部門欄位收納對齊。</li>
         </ul>
         <br>
         <p>© 2026 馬尼通訊總管理處考核系統</p>
