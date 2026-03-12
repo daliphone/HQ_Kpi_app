@@ -23,6 +23,25 @@ st.set_page_config(
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+    /* ===== 修復 Material Icons 字體未載入時顯示文字的問題 ===== */
+    .material-icons {
+        font-family: 'Material Icons' !important;
+        font-style: normal !important;
+        font-weight: normal !important;
+        font-size: 24px !important;
+        line-height: 1 !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        display: inline-block !important;
+        white-space: nowrap !important;
+        word-wrap: normal !important;
+        direction: ltr !important;
+        -webkit-font-feature-settings: 'liga' !important;
+        font-feature-settings: 'liga' !important;
+        -webkit-font-smoothing: antialiased !important;
+    }
 
     :root {
         --bg-base:       #F0F2F7;
@@ -43,7 +62,12 @@ st.markdown("""
 
     /* ===== 主體背景 ===== */
     .stApp { background-color: var(--bg-base) !important; }
-    .stApp * { font-family: 'Noto Sans TC', sans-serif; }
+
+    /* 精準指定字體，避免蓋掉 Material Icons 的字體設定 */
+    .stApp p, .stApp div, .stApp label,
+    .stApp input, .stApp textarea, .stApp button, .stApp select {
+        font-family: 'Noto Sans TC', sans-serif;
+    }
 
     /* ===== 主內容區 ===== */
     .block-container {
