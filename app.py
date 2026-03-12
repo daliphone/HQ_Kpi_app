@@ -13,7 +13,6 @@ except ImportError:
     HAS_GSHEETS = False
 
 # --- 1. 頁面設定 ---
-# YES.md Note: initial_sidebar_state="expanded" 已設定，大螢幕預設展開。小螢幕強制收合為 Streamlit 原生保護機制。
 st.set_page_config(
     page_title="馬尼通訊 | 人員評核系統",
     page_icon="💠",
@@ -50,44 +49,15 @@ st.markdown("""
     }
     .stApp { background-color: var(--bg-base) !important; color: var(--text-primary); }
 
-    /* 保護 Material Icons 不被中文字體覆寫 */
-    .material-icons, .st-emotion-cache-1bz1hzt svg {
+    /* 保護 Material Icons 不被中文字體覆寫，確保左上角箭頭正常顯示 */
+    .material-icons, .st-emotion-cache-1bz1hzt svg, [data-testid="collapsedControl"] svg {
         font-family: 'Material Icons' !important;
     }
 
-    /* ===== 終極修復：強制召回並美化左上角展開小箭頭 (浮島按鈕設計) ===== */
-    [data-testid="collapsedControl"] {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        z-index: 999999 !important;
-        background-color: var(--bg-surface) !important;
-        border: 1px solid var(--accent-blue) !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 12px rgba(59,111,232,0.2) !important;
-        left: 15px !important;
-        top: 15px !important;
-        padding: 4px !important;
-        transition: all 0.2s ease !important;
-    }
-    [data-testid="collapsedControl"]:hover {
-        background-color: var(--bg-hover) !important;
-        transform: scale(1.05) !important;
-    }
-    /* 強制隔離字體，避免 Icon 退化成英文單字 */
-    [data-testid="collapsedControl"] * {
-        font-family: 'Material Icons' !important;
-        color: var(--accent-blue) !important;
-        fill: var(--accent-blue) !important;
-    }
-
-    /* ===== 安全隱藏不需要的元件 ===== */
+    /* ===== 安全隱藏不需要的元件，保留原本的左上角展開按鈕 ===== */
     .stDeployButton { display: none !important; }
-    #MainMenu { display: none !important; }
+    [data-testid="stMainMenu"] { display: none !important; }
     [data-testid="stHeader"] { background-color: transparent !important; }
-    [data-testid="stToolbar"] { display: none !important; }
 
     /* ===== 主容器邊距 ===== */
     .block-container {
@@ -135,13 +105,29 @@ st.markdown("""
     .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 12px 0 4px 0; }
     .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
 
-    /* ===== 原生容器卡片統一風格 ===== */
-    [data-testid="stVerticalBlockBorderWrapper"] {
+    /* ===== 原生容器卡片統一風格 (取代之前的假卡片) ===== */
+    [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stForm"] {
         background-color: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
+        padding: 20px !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
         margin-bottom: 16px !important;
+    }
+
+    /* ===== 巢狀原生容器 (評分項目列) 的特殊樣式，修復幽靈空白條 ===== */
+    [data-testid="stForm"] [data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: var(--bg-elevated) !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        margin-bottom: 8px !important;
+        border: 1px solid var(--border) !important;
+    }
+    /* 取消 Streamlit 原生 columns 的多餘外距，保持緊湊 */
+    [data-testid="stForm"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     /* ===== 頁面大標題 ===== */
@@ -166,12 +152,12 @@ st.markdown("""
     .page-header-text h2 { margin: 0 0 5px 0; color: var(--text-primary); font-size: 22px; font-weight: 800; line-height: 1.2; }
     .page-header-text p { margin: 0; color: var(--text-muted); font-size: 13px; }
 
-    /* ===== 步驟標籤 (完美消除頂部空白) ===== */
+    /* ===== 步驟標籤 (負邊距，完美吃掉頂部空白) ===== */
     .section-label {
         display: flex; align-items: center; gap: 10px;
         font-size: 15px; font-weight: 800;
         color: var(--text-primary); letter-spacing: 1px;
-        margin: -8px 0 20px 0; 
+        margin: -10px 0 20px 0; /* 這裡把標題往上拉，填補空隙 */
         padding-bottom: 12px;
         border-bottom: 2px solid var(--bg-hover);
     }
@@ -195,13 +181,12 @@ st.markdown("""
     .ssh-badge-b { background: rgba(59,111,232,0.11); color: var(--accent-blue); }
     .ssh-badge-c { background: rgba(212,130,10,0.11); color: var(--accent-amber); }
 
-    /* ===== 評分項目列 ===== */
-    .score-item-container { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    /* ===== 評分項目內部文字 ===== */
     .score-title-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
     .score-title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
     .score-weight { font-size: 11px; color: var(--accent-blue); background: rgba(59,111,232,0.1); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; }
     .score-help { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-    .score-help-warn { font-size: 11px; color: #D4820A; background: rgba(212,130,10,0.08); padding: 3px 8px; border-radius: 4px; display: inline-block; }
+    .score-help-warn { font-size: 11px; color: #D4820A; background: rgba(212,130,10,0.08); padding: 3px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
 
     /* ===== 結果看板 ===== */
     .result-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px; text-align: center; height: 100%; }
@@ -461,7 +446,7 @@ if menu == "📝 新增評核":
     with col_r:
         wa, wb, wc = current_config['section_weights']
 
-        with st.form("score_form_v38", border=True):
+        with st.form("score_form_v40", border=True):
             st.markdown('<div class="section-label"><span>3</span>績效評分維度</div>', unsafe_allow_html=True)
 
             # ── A 區 ──
@@ -475,25 +460,26 @@ if menu == "📝 新增評核":
             scores_a = []
             for i, row in enumerate(current_config['basic']):
                 is_warn = '法遵' in row.get('help', '')
-                st.markdown('<div class="score-item-container">', unsafe_allow_html=True)
-                c_lbl, c_val = st.columns([2.5, 1])
-                with c_lbl:
-                    help_block = ""
-                    if row.get('help'):
-                        cls    = "score-help-warn" if is_warn else "score-help"
-                        prefix = "⚠ " if is_warn else "ℹ "
-                        help_block = f'<div class="{cls}">{prefix}{row["help"]}</div>'
-                    st.markdown(f"""
-                    <div class="score-title-wrap">
-                        <span class="score-title">{row['item']}</span>
-                        <span class="score-weight">×{int(row['weight']*100)}%</span>
-                    </div>
-                    {help_block}
-                    """, unsafe_allow_html=True)
-                with c_val:
-                    val = st.number_input(f"A{i}", -100, 100, 80, 5, key=f"va_{i}", label_visibility="collapsed")
-                    scores_a.append(val * row['weight'])
-                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # YES.md Fix: 取代錯誤的 div 包裝，改用 Streamlit 原生 Container 修復空白條問題
+                with st.container(border=True):
+                    c_lbl, c_val = st.columns([2.5, 1])
+                    with c_lbl:
+                        help_block = ""
+                        if row.get('help'):
+                            cls    = "score-help-warn" if is_warn else "score-help"
+                            prefix = "⚠ " if is_warn else "ℹ "
+                            help_block = f'<div class="{cls}">{prefix}{row["help"]}</div>'
+                        st.markdown(f"""
+                        <div class="score-title-wrap">
+                            <span class="score-title">{row['item']}</span>
+                            <span class="score-weight">×{int(row['weight']*100)}%</span>
+                        </div>
+                        {help_block}
+                        """, unsafe_allow_html=True)
+                    with c_val:
+                        val = st.number_input(f"A{i}", -100, 100, 80, 5, key=f"va_{i}", label_visibility="collapsed")
+                        scores_a.append(val * row['weight'])
 
             st.write("")
 
@@ -508,25 +494,25 @@ if menu == "📝 新增評核":
             scores_b = []
             for i, row in enumerate(current_config['excellent']):
                 is_warn = '法遵' in row.get('help', '')
-                st.markdown('<div class="score-item-container">', unsafe_allow_html=True)
-                c_lbl, c_val = st.columns([2.5, 1])
-                with c_lbl:
-                    help_block = ""
-                    if row.get('help'):
-                        cls    = "score-help-warn" if is_warn else "score-help"
-                        prefix = "⚠ " if is_warn else "ℹ "
-                        help_block = f'<div class="{cls}">{prefix}{row["help"]}</div>'
-                    st.markdown(f"""
-                    <div class="score-title-wrap">
-                        <span class="score-title">{row['item']}</span>
-                        <span class="score-weight">×{int(row['weight']*100)}%</span>
-                    </div>
-                    {help_block}
-                    """, unsafe_allow_html=True)
-                with c_val:
-                    val = st.number_input(f"B{i}", 0, 100, 80, 5, key=f"vb_{i}", label_visibility="collapsed")
-                    scores_b.append(val * row['weight'])
-                st.markdown('</div>', unsafe_allow_html=True)
+                
+                with st.container(border=True):
+                    c_lbl, c_val = st.columns([2.5, 1])
+                    with c_lbl:
+                        help_block = ""
+                        if row.get('help'):
+                            cls    = "score-help-warn" if is_warn else "score-help"
+                            prefix = "⚠ " if is_warn else "ℹ "
+                            help_block = f'<div class="{cls}">{prefix}{row["help"]}</div>'
+                        st.markdown(f"""
+                        <div class="score-title-wrap">
+                            <span class="score-title">{row['item']}</span>
+                            <span class="score-weight">×{int(row['weight']*100)}%</span>
+                        </div>
+                        {help_block}
+                        """, unsafe_allow_html=True)
+                    with c_val:
+                        val = st.number_input(f"B{i}", 0, 100, 80, 5, key=f"vb_{i}", label_visibility="collapsed")
+                        scores_b.append(val * row['weight'])
 
             st.write("")
 
@@ -584,7 +570,7 @@ if menu == "📝 新增評核":
 
             with col_res1:
                 with st.container(border=True):
-                    st.markdown('<div class="section-label" style="margin-top:0;"><span>4</span>核定結果</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-label"><span>4</span>核定結果</div>', unsafe_allow_html=True)
                     st.markdown(f"""
                     <div class="result-panel">
                         <div class="result-score-label">最終核定總分</div>
@@ -596,7 +582,7 @@ if menu == "📝 新增評核":
 
             with col_res2:
                 with st.container(border=True):
-                    st.markdown('<div class="section-label" style="margin-top:0;"><span>5</span>獎金確認與上傳</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-label"><span>5</span>獎金確認與上傳</div>', unsafe_allow_html=True)
                     base      = st.number_input("本薪基數（元）", 0, 200000, 30000, 1000)
                     final_amt = st.number_input("確認實發金額（元）", 0, 500000, int(base * grade_m))
                     st.write("")
@@ -646,7 +632,7 @@ elif menu == "📋 雲端紀錄":
 
     if st.session_state.batch_queue:
         with st.container(border=True):
-            st.markdown('<div class="section-label" style="margin-top:0;"><span>↑</span>上傳緩衝區</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-label"><span>↑</span>上傳緩衝區</div>', unsafe_allow_html=True)
             st.dataframe(
                 pd.DataFrame(st.session_state.batch_queue)[['受評姓名', '部門', '總分', '評等', '實得獎金']],
                 hide_index=True, use_container_width=True
@@ -689,7 +675,7 @@ elif menu == "📋 雲端紀錄":
                         st.rerun()
 
     with st.container(border=True):
-        st.markdown('<div class="section-label" style="margin-top:0;"><span>◈</span>歷史資料檢視</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label"><span>◈</span>歷史資料檢視</div>', unsafe_allow_html=True)
 
         if st.session_state.cloud_data_cache is not None and not st.session_state.cloud_data_cache.empty:
             df = st.session_state.cloud_data_cache
@@ -836,6 +822,6 @@ elif menu == "⚙️ 參數設定":
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v39.0 - UI 護城河與浮島按鈕防護版</p>
+    <p style="font-size:10px;">系統版本 v40.0 - 原生 DOM 重構與無縫排版版</p>
 </div>
 """, unsafe_allow_html=True)
