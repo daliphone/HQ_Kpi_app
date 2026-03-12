@@ -65,10 +65,13 @@ st.markdown("""
         box-shadow: none !important; padding: 0 !important;
     }
 
-    /* ===== 全域重置 ===== */
+    /* ===== 全域重置 (YES.md 修復：召回側邊欄展開按鈕) ===== */
     #MainMenu { visibility: hidden; }
-    header { visibility: hidden; }
-    .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; max-width: 97%; }
+    /* 移除暴力的 header hidden，改為透明與隱藏不需要的工具列 */
+    [data-testid="stHeader"] { background-color: transparent !important; }
+    [data-testid="stToolbar"] { display: none !important; }
+    
+    .block-container { padding-top: 2.5rem !important; padding-bottom: 3rem !important; max-width: 97%; }
 
     /* ===== 側邊欄 ===== */
     [data-testid="stSidebar"] { background-color: var(--bg-surface) !important; border-right: 1px solid var(--border) !important; }
@@ -847,6 +850,6 @@ elif menu == "⚙️ 參數設定":
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v36.0 - YES.md 治理修復版</p>
+    <p style="font-size:10px;">系統版本 v36.1 - YES.md 治理修復版</p>
 </div>
 """, unsafe_allow_html=True)
