@@ -81,21 +81,31 @@ st.markdown("""
     .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 12px 0 4px 0; }
     .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
 
-    /* 側邊欄 Radio - 隱藏圓點與白框 */
-    [data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none !important; }
-    [data-testid="stSidebar"] .stRadio > div[data-baseweb="radio-group"] { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
-    [data-testid="stSidebar"] .stRadio label {
+    /* 側邊欄 Radio - YES.md 點擊修復版 */
+    [data-testid="stSidebar"] .stRadio [role="radiogroup"] { 
+        background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 12px !important; gap: 4px !important; 
+    }
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] { 
+        cursor: pointer !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: transparent !important; 
+    }
+    /* 安全隱藏圓點，保留 input 的 DOM 事件觸發能力 */
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child { 
+        position: absolute !important; opacity: 0 !important; width: 0 !important; height: 0 !important; overflow: hidden !important;
+    }
+    /* 將選單樣式綁定在文字容器上 */
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:last-child {
         color: var(--text-secondary) !important; font-size: 14px !important; font-weight: 500 !important;
         padding: 10px 16px !important; border-radius: 8px !important; margin: 2px 0 !important;
-        transition: all 0.15s ease !important; cursor: pointer; display: block !important; width: 100% !important;
-        border-left: 3px solid transparent !important;
+        transition: all 0.15s ease !important; display: block !important; width: 100% !important;
+        border-left: 3px solid transparent !important; background: transparent !important;
     }
-    [data-testid="stSidebar"] .stRadio label:hover { background: var(--bg-hover) !important; color: var(--text-primary) !important; }
-    [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] label {
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"]:hover > div:last-child { 
+        background: var(--bg-hover) !important; color: var(--text-primary) !important; 
+    }
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"][aria-checked="true"] > div:last-child {
         background: rgba(59,111,232,0.08) !important; color: var(--accent-blue) !important;
         border-left: 3px solid var(--accent-blue) !important; font-weight: 700 !important; padding-left: 13px !important;
     }
-    [data-testid="stSidebar"] .stRadio > div { gap: 2px !important; padding: 0 12px !important; background: transparent !important; border: none !important; }
 
     /* ===== 頁面大標題 - 全新設計 ===== */
     .page-header { position: relative; margin-bottom: 28px; }
