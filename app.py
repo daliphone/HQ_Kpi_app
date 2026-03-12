@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. 全新視覺設計 CSS (修復 DOM 斷層與卡片排版) ---
+# --- 2. 全新視覺設計 CSS ---
 st.markdown("""
 <style>
     /* ===== 字體引入 ===== */
@@ -44,29 +44,44 @@ st.markdown("""
         --accent-violet: #6C4FD4;
     }
 
-    /* 強制蓋過 Streamlit 的深色模式底色，確保不飽和美學正常顯示 */
+    /* 強制蓋過 Streamlit 底色 */
     .stApp { background-color: var(--bg-base) !important; }
     .stApp * { color: var(--text-primary); font-family: 'Noto Sans TC', sans-serif; }
 
-    /* ===== 側邊欄展開按鈕強制顯示 (修復看不到導航的問題) ===== */
+    /* ===== 修復：Header 縮到最小高度，不隱藏，保留 sidebar toggle 事件鏈 ===== */
+    [data-testid="stHeader"] {
+        background-color: transparent !important;
+        height: 0rem !important;
+        min-height: 0rem !important;
+    }
+
+    /* ===== 修復：Toolbar 用 visibility 隱藏，保留 DOM 結構與事件 ===== */
+    [data-testid="stToolbar"] {
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* ===== 側邊欄展開按鈕：加 pointer-events 確保可點擊 ===== */
     [data-testid="collapsedControl"] {
         display: flex !important;
         visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: all !important;
         background-color: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         box-shadow: 0 2px 6px rgba(59,111,232,0.15) !important;
         z-index: 999999 !important;
     }
-    [data-testid="collapsedControl"] svg { fill: var(--accent-blue) !important; color: var(--accent-blue) !important; }
+    [data-testid="collapsedControl"] svg {
+        fill: var(--accent-blue) !important;
+        color: var(--accent-blue) !important;
+    }
 
-    /* ===== 頂部工具列隱藏 (乾淨的頂部) ===== */
-    [data-testid="stHeader"] { background-color: transparent !important; }
-    [data-testid="stToolbar"] { display: none !important; }
-    
     .block-container { padding-top: 2rem !important; padding-bottom: 3rem !important; max-width: 96%; }
 
-    /* ===== Streamlit 原生容器美化 (取代原本壞掉的 .card) ===== */
+    /* ===== Streamlit 原生容器美化 ===== */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
@@ -116,7 +131,7 @@ st.markdown("""
     .page-header-text h2 { margin: 0 0 5px 0; color: var(--text-primary); font-size: 22px; font-weight: 800; letter-spacing: 0.2px; line-height: 1.2; }
     .page-header-text p { margin: 0; color: var(--text-muted); font-size: 13px; }
 
-    /* ===== 步驟標籤 (移入卡片內部的樣式) ===== */
+    /* ===== 步驟標籤 ===== */
     .section-label {
         display: flex; align-items: center; gap: 10px;
         font-size: 14px; font-weight: 800; color: var(--text-primary);
@@ -175,11 +190,11 @@ st.markdown("""
     .stButton > button:hover { background: var(--bg-hover) !important; border-color: var(--accent-blue) !important; color: var(--text-primary) !important; }
     .stButton > button[kind="primary"] { background: var(--accent-blue) !important; border-color: var(--accent-blue) !important; color: white !important; }
     .stFormSubmitButton > button { background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important; border: none !important; color: white !important; font-size: 15px !important; font-weight: 700 !important; padding: 14px !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important; width: 100% !important; margin-top: 10px;}
-    
+
     [data-testid="stExpander"] { background: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
     .stDataFrame, [data-testid="stDataEditor"] { background: var(--bg-surface) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
     [data-testid="stSelectbox"] > div > div { background: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text-primary) !important; }
-    
+
     .system-footer { text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 12px; margin-top: 40px; border-top: 1px solid var(--border); }
 </style>
 """, unsafe_allow_html=True)
@@ -224,12 +239,12 @@ def get_gsheets_connection():
 # --- 4. 初始化資料 ---
 if 'bonus_rules' not in st.session_state:
     st.session_state.bonus_rules = [
-        {"grade": "S (特優)",   "min_score": 90, "months": 1.5, "color": "#D94F7A"}, 
-        {"grade": "A (優良)",   "min_score": 80, "months": 1.0, "color": "#6C4FD4"}, 
-        {"grade": "B+ (甲上)",  "min_score": 75, "months": 0.8, "color": "#3B6FE8"}, 
-        {"grade": "B- (甲)",    "min_score": 70, "months": 0.6, "color": "#0EAFA0"}, 
-        {"grade": "C (待改善)", "min_score": 60, "months": 0.5, "color": "#D4820A"}, 
-        {"grade": "D (不合格)", "min_score": 0,  "months": 0.0, "color": "#8B93B0"}, 
+        {"grade": "S (特優)",   "min_score": 90, "months": 1.5, "color": "#D94F7A"},
+        {"grade": "A (優良)",   "min_score": 80, "months": 1.0, "color": "#6C4FD4"},
+        {"grade": "B+ (甲上)",  "min_score": 75, "months": 0.8, "color": "#3B6FE8"},
+        {"grade": "B- (甲)",    "min_score": 70, "months": 0.6, "color": "#0EAFA0"},
+        {"grade": "C (待改善)", "min_score": 60, "months": 0.5, "color": "#D4820A"},
+        {"grade": "D (不合格)", "min_score": 0,  "months": 0.0, "color": "#8B93B0"},
     ]
 
 if 'config_data' not in st.session_state:
@@ -353,11 +368,7 @@ with st.sidebar:
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.session_state.batch_queue:
-        st.markdown(f"""
-        <div class="upload-pending">
-            ⏳ 待上傳 {len(st.session_state.batch_queue)} 筆紀錄
-        </div>
-        """, unsafe_allow_html=True)
+        st.info(f"⏳ 待上傳 {len(st.session_state.batch_queue)} 筆紀錄")
 
 # ==========================================
 # 頁面 1：新增人員評核
@@ -371,7 +382,6 @@ if menu == "📝 新增評核":
           <h2>新增人員評核</h2>
           <p>填寫基本資料與各維度評分，完成後執行計算</p>
         </div>
-        <div class="page-header-badge">Performance Review</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -379,7 +389,6 @@ if menu == "📝 新增評核":
     col_l, col_r = st.columns([1.15, 2], gap="large")
 
     with col_l:
-        # YES.md Fix: 改用 Streamlit 原生容器，將標題移入內部，徹底消滅幽靈空白
         with st.container(border=True):
             st.markdown('<div class="section-label"><span>1</span>基本資料</div>', unsafe_allow_html=True)
             input_name       = st.text_input("受評人姓名", placeholder="輸入姓名...")
@@ -414,8 +423,7 @@ if menu == "📝 新增評核":
     with col_r:
         wa, wb, wc = current_config['section_weights']
 
-        # 將標題包進 Form 裡面，維持排版一體成形
-        with st.form("score_form_v36", border=True):
+        with st.form("score_form_v37", border=True):
             st.markdown('<div class="section-label"><span>3</span>績效評分維度</div>', unsafe_allow_html=True)
 
             # ── A 區 ──
@@ -429,7 +437,7 @@ if menu == "📝 新增評核":
             for i, row in enumerate(current_config['basic']):
                 is_warning = '法遵' in row.get('help', '')
                 help_cls   = 'warning' if is_warning else ''
-                
+
                 st.markdown('<div class="score-item-container">', unsafe_allow_html=True)
                 c_lbl, c_val = st.columns([2.5, 1])
                 with c_lbl:
@@ -462,7 +470,7 @@ if menu == "📝 新增評核":
             for i, row in enumerate(current_config['excellent']):
                 is_warning = '法遵' in row.get('help', '')
                 help_cls   = 'warning' if is_warning else ''
-                
+
                 st.markdown('<div class="score-item-container">', unsafe_allow_html=True)
                 c_lbl, c_val = st.columns([2.5, 1])
                 with c_lbl:
@@ -508,7 +516,7 @@ if menu == "📝 新增評核":
             else:
                 raw_score = (sum(scores_a) * wa) + (sum(scores_b) * wb) + (c_mgr_score * 10 * wc)
                 final_score = max(0.0, min(100.0, raw_score))
-                
+
                 a_details = [f"✓ {row['item']}: {st.session_state[f'va_{i}']}" for i, row in enumerate(current_config['basic'])]
                 b_details = [f"✓ {row['item']}: {st.session_state[f'vb_{i}']}" for i, row in enumerate(current_config['excellent'])]
                 text_records = [f"【{row['title']}】\n{st.session_state.get(f't_a_{input_dept}_{i}', row['content'])}" for i, row in enumerate(current_config['text_a'])]
@@ -577,7 +585,6 @@ elif menu == "📋 雲端紀錄":
           <h2>雲端評核紀錄資料庫</h2>
           <p>查詢歷史評核資料，管理待上傳佇列</p>
         </div>
-        <div class="page-header-badge">Cloud Records</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -649,16 +656,15 @@ elif menu == "📋 雲端紀錄":
         if st.session_state.cloud_data_cache is not None and not st.session_state.cloud_data_cache.empty:
             df = st.session_state.cloud_data_cache
 
-            # 統計列
             s_cols = st.columns(4)
             with s_cols[0]:
-                st.markdown(f'<div class="stat-badge"><div class="stat-badge-val">{len(df)}</div><div class="stat-badge-lbl">總評核人數</div></div>', unsafe_allow_html=True)
+                st.metric("總評核人數", len(df))
             with s_cols[1]:
                 avg = pd.to_numeric(df.get('總分', pd.Series()), errors='coerce').mean()
-                st.markdown(f'<div class="stat-badge"><div class="stat-badge-val">{avg:.1f}</div><div class="stat-badge-lbl">平均分數</div></div>', unsafe_allow_html=True)
+                st.metric("平均分數", f"{avg:.1f}")
             with s_cols[2]:
                 top_cnt = (pd.to_numeric(df.get('總分', pd.Series()), errors='coerce') >= 80).sum()
-                st.markdown(f'<div class="stat-badge"><div class="stat-badge-val">{top_cnt}</div><div class="stat-badge-lbl">A 級以上人數</div></div>', unsafe_allow_html=True)
+                st.metric("A 級以上人數", top_cnt)
             with s_cols[3]:
                 m_list = ["全部"] + list(df['評分日期'].astype(str).str[:7].unique())
                 s_m    = st.selectbox("過濾月份", m_list, label_visibility="collapsed")
@@ -719,7 +725,6 @@ elif menu == "⚙️ 參數設定":
           <h2>系統參數維護</h2>
           <p>調整獎金級距、部門考核項目與品牌識別</p>
         </div>
-        <div class="page-header-badge">Settings</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -736,21 +741,21 @@ elif menu == "⚙️ 參數設定":
         with tab2:
             edit_dept = st.selectbox("選擇要修改的部門", options=DEPT_LIST)
             conf      = st.session_state.config_data[edit_dept]
-            
+
             total_w = sum(conf['section_weights'])
             if abs(total_w - 1.0) > 0.01:
                 st.error(f"⚠ 注意：目前 A/B/C 三區權重總和為 {total_w*100}%，建議調整為 100%。")
-            
+
             col_w1, col_w2, col_w3 = st.columns(3)
             nw_a = col_w1.number_input("A區權重 (KPI)", value=conf['section_weights'][0], step=0.05)
             nw_b = col_w2.number_input("B區權重 (OKR)", value=conf['section_weights'][1], step=0.05)
             nw_c = col_w3.number_input("C區權重 (主管)", value=conf['section_weights'][2], step=0.05)
             st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
-            
+
             st.markdown('<div style="font-size:14px; color:var(--accent-teal); font-weight:700; margin: 20px 0 8px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
             ed_a = st.data_editor(pd.DataFrame(conf['basic']), num_rows="dynamic", use_container_width=True, key=f"edit_a_{edit_dept}")
             st.session_state.config_data[edit_dept]['basic'] = ed_a.to_dict('records')
-            
+
             st.markdown('<div style="font-size:14px; color:var(--accent-blue); font-weight:700; margin: 20px 0 8px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
             ed_b = st.data_editor(pd.DataFrame(conf['excellent']), num_rows="dynamic", use_container_width=True, key=f"edit_b_{edit_dept}")
             st.session_state.config_data[edit_dept]['excellent'] = ed_b.to_dict('records')
@@ -786,10 +791,10 @@ elif menu == "⚙️ 參數設定":
         if st.button("💾 儲存並套用設定", type="primary"):
             st.rerun()
 
-# --- 7. Footer ---
+# --- Footer ---
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v36.2 - DOM 結構修復與 UI 縫合</p>
+    <p style="font-size:10px;">系統版本 v37.0 - 側邊欄導航修復</p>
 </div>
 """, unsafe_allow_html=True)
