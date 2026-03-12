@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import io
 import os
 import json
 
@@ -20,13 +19,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. 全新視覺設計 CSS ---
+# --- 2. CSS：完全不碰 sidebar、header、toolbar 的 DOM ---
 st.markdown("""
 <style>
-    /* ===== 字體引入 ===== */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap');
 
-    /* ===== CSS 變數 (淺色系) ===== */
     :root {
         --bg-base:       #F0F2F7;
         --bg-surface:    #FFFFFF;
@@ -44,44 +41,38 @@ st.markdown("""
         --accent-violet: #6C4FD4;
     }
 
-    /* 強制蓋過 Streamlit 底色 */
+    /* ===== 主體背景 ===== */
     .stApp { background-color: var(--bg-base) !important; }
-    .stApp * { color: var(--text-primary); font-family: 'Noto Sans TC', sans-serif; }
+    .stApp * { font-family: 'Noto Sans TC', sans-serif; }
 
-    /* ===== 修復：Header 縮到最小高度，不隱藏，保留 sidebar toggle 事件鏈 ===== */
-    [data-testid="stHeader"] {
-        background-color: transparent !important;
-        height: 0rem !important;
-        min-height: 0rem !important;
+    /* ===== 主內容區 ===== */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 96%;
     }
 
-    /* ===== 修復：Toolbar 用 visibility 隱藏，保留 DOM 結構與事件 ===== */
-    [data-testid="stToolbar"] {
-        visibility: hidden !important;
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-
-    /* ===== 側邊欄展開按鈕：加 pointer-events 確保可點擊 ===== */
-    [data-testid="collapsedControl"] {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: all !important;
+    /* ===== 側邊欄樣式（只美化，不控制顯示） ===== */
+    section[data-testid="stSidebar"] {
         background-color: var(--bg-surface) !important;
-        border: 1px solid var(--border) !important;
+        border-right: 1px solid var(--border) !important;
+    }
+
+    /* ===== 側邊欄 Radio 美化 ===== */
+    section[data-testid="stSidebar"] .stRadio > div {
+        gap: 4px !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label {
+        cursor: pointer !important;
         border-radius: 8px !important;
-        box-shadow: 0 2px 6px rgba(59,111,232,0.15) !important;
-        z-index: 999999 !important;
+        padding: 8px 12px !important;
+        transition: background 0.15s !important;
     }
-    [data-testid="collapsedControl"] svg {
-        fill: var(--accent-blue) !important;
-        color: var(--accent-blue) !important;
+    section[data-testid="stSidebar"] .stRadio label:hover {
+        background: var(--bg-hover) !important;
     }
 
-    .block-container { padding-top: 2rem !important; padding-bottom: 3rem !important; max-width: 96%; }
-
-    /* ===== Streamlit 原生容器美化 ===== */
+    /* ===== 原生容器卡片 ===== */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
@@ -91,65 +82,73 @@ st.markdown("""
         margin-bottom: 16px !important;
     }
 
-    /* ===== 側邊欄 ===== */
-    [data-testid="stSidebar"] { background-color: var(--bg-surface) !important; border-right: 1px solid var(--border) !important; }
-    [data-testid="stSidebar"] > div:first-child { padding: 0; }
-    [data-testid="stSidebar"] hr { border-color: var(--border) !important; margin: 12px 0 16px 0; }
-
-    /* Logo 區 */
-    .sidebar-logo { background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%); padding: 28px 20px 22px; border-bottom: 1px solid var(--border); text-align: center; }
-    .sidebar-logo-icon { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 10px rgba(59,111,232,0.25)); }
-    .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 12px 0 4px 0; }
-    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
-
-    /* 側邊欄 Radio */
-    [data-testid="stSidebar"] .stRadio [role="radiogroup"] { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 12px !important; gap: 4px !important; }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] { cursor: pointer !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: transparent !important; }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child { position: absolute !important; opacity: 0 !important; width: 0 !important; height: 0 !important; overflow: hidden !important; }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:last-child {
-        color: var(--text-secondary) !important; font-size: 14px !important; font-weight: 500 !important;
-        padding: 10px 16px !important; border-radius: 8px !important; margin: 2px 0 !important;
-        transition: all 0.15s ease !important; display: block !important; width: 100% !important;
-        border-left: 3px solid transparent !important; background: transparent !important;
-    }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"]:hover > div:last-child { background: var(--bg-hover) !important; color: var(--text-primary) !important; }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"][aria-checked="true"] > div:last-child {
-        background: rgba(59,111,232,0.08) !important; color: var(--accent-blue) !important;
-        border-left: 3px solid var(--accent-blue) !important; font-weight: 700 !important; padding-left: 13px !important;
-    }
-
     /* ===== 頁面大標題 ===== */
-    .page-header { position: relative; margin-bottom: 24px; }
     .page-header-inner {
-        display: flex; align-items: center; gap: 20px; padding: 22px 28px 22px 34px;
-        background: var(--bg-surface); border: 1px solid var(--border);
-        border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(59,111,232,0.06); position: relative;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 22px 28px 22px 34px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(59,111,232,0.06);
+        position: relative;
+        margin-bottom: 24px;
+        overflow: hidden;
     }
-    .page-header-inner::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: linear-gradient(180deg, var(--accent-blue) 0%, var(--accent-teal) 100%); border-radius: 16px 0 0 16px; }
-    .page-header-icon-wrap { width: 54px; height: 54px; flex-shrink: 0; background: linear-gradient(135deg, rgba(59,111,232,0.10) 0%, rgba(14,175,160,0.07) 100%); border: 1px solid rgba(59,111,232,0.16); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
-    .page-header-text { flex: 1; min-width: 0; }
-    .page-header-text h2 { margin: 0 0 5px 0; color: var(--text-primary); font-size: 22px; font-weight: 800; letter-spacing: 0.2px; line-height: 1.2; }
-    .page-header-text p { margin: 0; color: var(--text-muted); font-size: 13px; }
+    .page-header-inner::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 5px;
+        background: linear-gradient(180deg, var(--accent-blue) 0%, var(--accent-teal) 100%);
+        border-radius: 16px 0 0 16px;
+    }
+    .page-header-icon-wrap {
+        width: 54px; height: 54px; flex-shrink: 0;
+        background: linear-gradient(135deg, rgba(59,111,232,0.10) 0%, rgba(14,175,160,0.07) 100%);
+        border: 1px solid rgba(59,111,232,0.16);
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px;
+    }
+    .page-header-text h2 {
+        margin: 0 0 5px 0;
+        color: var(--text-primary);
+        font-size: 22px; font-weight: 800;
+        line-height: 1.2;
+    }
+    .page-header-text p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
 
     /* ===== 步驟標籤 ===== */
     .section-label {
         display: flex; align-items: center; gap: 10px;
-        font-size: 14px; font-weight: 800; color: var(--text-primary);
-        letter-spacing: 1px;
-        margin: 0 0 20px 0; padding-bottom: 14px; border-bottom: 2px solid var(--bg-hover);
+        font-size: 14px; font-weight: 800;
+        color: var(--text-primary); letter-spacing: 1px;
+        margin: 0 0 20px 0; padding-bottom: 14px;
+        border-bottom: 2px solid var(--bg-hover);
     }
     .section-label span {
         display: inline-flex; align-items: center; justify-content: center;
-        width: 24px; height: 24px; background: var(--accent-blue);
-        border-radius: 6px; font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
+        width: 24px; height: 24px;
+        background: var(--accent-blue);
+        border-radius: 6px; font-size: 12px; font-weight: 800;
+        color: white; flex-shrink: 0;
     }
 
     /* ===== 評分區塊標題 ===== */
-    .score-section-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-radius: 10px; margin: 0 0 14px 0; border: 1px solid; }
+    .score-section-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 13px 18px; border-radius: 10px; margin: 0 0 14px 0; border: 1px solid;
+    }
     .ssh-a { background: rgba(14,175,160,0.05); border-color: rgba(14,175,160,0.22) !important; }
     .ssh-b { background: rgba(59,111,232,0.05); border-color: rgba(59,111,232,0.22) !important; }
     .ssh-c { background: rgba(212,130,10,0.05); border-color: rgba(212,130,10,0.22) !important; }
-    .ssh-title { font-weight: 800; font-size: 13px; letter-spacing: 0.3px; }
+    .ssh-title { font-weight: 800; font-size: 13px; }
     .ssh-title-a { color: var(--accent-teal); }
     .ssh-title-b { color: var(--accent-blue); }
     .ssh-title-c { color: var(--accent-amber); }
@@ -159,45 +158,127 @@ st.markdown("""
     .ssh-badge-c { background: rgba(212,130,10,0.11); color: var(--accent-amber); }
 
     /* ===== 評分項目列 ===== */
-    .score-item-container { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; transition: border-color 0.15s, box-shadow 0.15s; }
-    .score-item-container:hover { border-color: var(--accent-blue); box-shadow: 0 2px 8px rgba(59,111,232,0.08); }
-    .score-info { display: flex; flex-direction: column; justify-content: center; height: 100%; }
-    .score-title-wrap { display: flex; align-items: center; gap: 8px; }
+    .score-item-container {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .score-title-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
     .score-title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
-    .score-weight { font-size: 11px; color: var(--accent-blue); background: rgba(59,111,232,0.1); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; }
-    .score-help { font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
-    .score-help.warning { color: #D4820A; background: rgba(212,130,10,0.08); padding: 3px 8px; border-radius: 4px; display: inline-block;}
+    .score-weight {
+        font-size: 11px; color: var(--accent-blue);
+        background: rgba(59,111,232,0.1); padding: 2px 6px;
+        border-radius: 4px; font-family: 'DM Mono', monospace;
+    }
+    .score-help { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+    .score-help-warn {
+        font-size: 11px; color: #D4820A;
+        background: rgba(212,130,10,0.08); padding: 3px 8px;
+        border-radius: 4px; display: inline-block;
+    }
 
     /* ===== 結果看板 ===== */
-    .result-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px; text-align: center; position: relative; overflow: hidden; height: 100%;}
-    .result-score-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-    .result-score-value { font-size: 56px; font-weight: 900; color: var(--text-primary); line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 14px; }
-    .result-grade-badge { display: inline-block; padding: 6px 20px; border-radius: 24px; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .result-panel {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 14px; padding: 28px 24px; text-align: center;
+    }
+    .result-score-label {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .result-score-value {
+        font-size: 56px; font-weight: 900; color: var(--text-primary);
+        line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 14px;
+    }
+    .result-grade-badge {
+        display: inline-block; padding: 6px 20px; border-radius: 24px;
+        font-size: 14px; font-weight: 700; margin-bottom: 10px;
+    }
 
     /* ===== 歷史卡片 ===== */
-    .history-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; transition: all 0.2s ease; }
-    .history-card:hover { border-color: var(--accent-blue); background: #FAFBFF; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(59,111,232,0.10); }
+    .history-card {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 18px; margin-bottom: 12px;
+    }
     .history-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
     .history-card-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-    .history-card-dept { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
-    .history-card-score { font-size: 28px; font-weight: 900; color: var(--text-primary); font-family: 'DM Mono', monospace; line-height: 1; }
+    .history-card-dept {
+        font-size: 11px; color: var(--text-muted);
+        background: var(--bg-elevated); border: 1px solid var(--border);
+        padding: 2px 8px; border-radius: 6px;
+    }
+    .history-card-score {
+        font-size: 28px; font-weight: 900;
+        color: var(--text-primary); font-family: 'DM Mono', monospace;
+    }
 
-    /* ===== Streamlit 元件覆蓋 ===== */
-    .stTextInput input, .stNumberInput input, .stTextArea textarea { background-color: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text-primary) !important; font-size: 14px !important; }
-    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus { border-color: var(--accent-blue) !important; box-shadow: 0 0 0 3px rgba(59,111,232,0.10) !important; }
-    .stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label, .stDateInput label { color: var(--text-secondary) !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; }
-    .stButton > button { background: var(--bg-surface) !important; border: 1px solid var(--border-light) !important; color: var(--text-secondary) !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 13px !important; transition: all 0.15s !important; }
-    .stButton > button:hover { background: var(--bg-hover) !important; border-color: var(--accent-blue) !important; color: var(--text-primary) !important; }
-    .stButton > button[kind="primary"] { background: var(--accent-blue) !important; border-color: var(--accent-blue) !important; color: white !important; }
-    .stFormSubmitButton > button { background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important; border: none !important; color: white !important; font-size: 15px !important; font-weight: 700 !important; padding: 14px !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important; width: 100% !important; margin-top: 10px;}
+    /* ===== Streamlit 元件 ===== */
+    .stTextInput input, .stNumberInput input, .stTextArea textarea {
+        background-color: var(--bg-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        color: var(--text-primary) !important;
+        font-size: 14px !important;
+    }
+    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+        border-color: var(--accent-blue) !important;
+        box-shadow: 0 0 0 3px rgba(59,111,232,0.10) !important;
+    }
+    .stButton > button {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border-light) !important;
+        color: var(--text-secondary) !important;
+        border-radius: 8px !important; font-weight: 600 !important;
+        font-size: 13px !important; transition: all 0.15s !important;
+    }
+    .stButton > button:hover {
+        background: var(--bg-hover) !important;
+        border-color: var(--accent-blue) !important;
+        color: var(--text-primary) !important;
+    }
+    .stButton > button[kind="primary"] {
+        background: var(--accent-blue) !important;
+        border-color: var(--accent-blue) !important;
+        color: white !important;
+    }
+    .stFormSubmitButton > button {
+        background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important;
+        border: none !important; color: white !important;
+        font-size: 15px !important; font-weight: 700 !important;
+        padding: 14px !important; border-radius: 10px !important;
+        box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important;
+        width: 100% !important; margin-top: 10px;
+    }
+    [data-testid="stExpander"] {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stSelectbox"] > div > div {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+    }
 
-    [data-testid="stExpander"] { background: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
-    .stDataFrame, [data-testid="stDataEditor"] { background: var(--bg-surface) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
-    [data-testid="stSelectbox"] > div > div { background: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text-primary) !important; }
+    /* ===== 側邊欄 Logo 區 ===== */
+    .sidebar-logo {
+        background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%);
+        padding: 28px 20px 22px; border-bottom: 1px solid var(--border); text-align: center;
+    }
+    .sidebar-logo-icon { font-size: 44px; line-height: 1; }
+    .sidebar-logo-title {
+        color: var(--text-primary); font-size: 18px; font-weight: 700;
+        letter-spacing: 3px; margin: 12px 0 4px 0;
+    }
+    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; }
 
-    .system-footer { text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 12px; margin-top: 40px; border-top: 1px solid var(--border); }
+    /* ===== Footer ===== */
+    .system-footer {
+        text-align: center; padding: 30px 0; color: var(--text-muted);
+        font-size: 12px; margin-top: 40px; border-top: 1px solid var(--border);
+    }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- 3. 核心功能 ---
 def calculate_dynamic_bonus(score, rules_data):
@@ -221,8 +302,8 @@ def get_gsheets_connection():
     is_legacy = False
     if not json_str and st.secrets.get("connections") and st.secrets["connections"].get("gsheets") and "client_email" in st.secrets["connections"]["gsheets"]:
         is_legacy = True
-    if not spreadsheet_url: return None, "未設定網址"
-
+    if not spreadsheet_url:
+        return None, "未設定網址"
     temp_key_path = "/tmp/gsheets_key.json"
     os.makedirs("/tmp", exist_ok=True)
     try:
@@ -234,7 +315,9 @@ def get_gsheets_connection():
             with open(temp_key_path, "w") as f: json.dump(json.loads(json_str), f)
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
         return st.connection("gsheets", type=GSheetsConnection), temp_key_path
-    except Exception as e: return None, str(e)
+    except Exception as e:
+        return None, str(e)
+
 
 # --- 4. 初始化資料 ---
 if 'bonus_rules' not in st.session_state:
@@ -251,7 +334,7 @@ if 'config_data' not in st.session_state:
     ECOMMERCE_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
-            {"item": "訂單處理正確率", "weight": 0.30, "help": "【法遵紅線】不可扣底薪。\n100分: 0%錯誤; 85分: <0.5%"},
+            {"item": "訂單處理正確率", "weight": 0.30, "help": "【法遵紅線】不可扣底薪。100分: 0%錯誤; 85分: <0.5%"},
             {"item": "客服聊聊響應",   "weight": 0.30, "help": "【法遵紅線】僅限上班時間計入。"},
             {"item": "商城活動參與",   "weight": 0.20, "help": "主動提報與執行力。"},
             {"item": "上架與庫存準確", "weight": 0.20, "help": "【法遵紅線】標錯價屬重大疏失。"}
@@ -268,10 +351,10 @@ if 'config_data' not in st.session_state:
     MEDIA_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
-            {"item": "短影音產出成效", "weight": 0.30, "help": "100分: 12支+觀看破萬; 85分: 準時12支"},
-            {"item": "官網SEO文章撰寫","weight": 0.30, "help": "【法遵紅線】抄襲涉及著作權法。"},
-            {"item": "社群互動維護",   "weight": 0.20, "help": "【法遵紅線】禁止下班要求回覆。"},
-            {"item": "導流貢獻(ROAS)", "weight": 0.20, "help": "100分: >50筆詢單"}
+            {"item": "短影音產出成效",  "weight": 0.30, "help": "100分: 12支+觀看破萬; 85分: 準時12支"},
+            {"item": "官網SEO文章撰寫", "weight": 0.30, "help": "【法遵紅線】抄襲涉及著作權法。"},
+            {"item": "社群互動維護",    "weight": 0.20, "help": "【法遵紅線】禁止下班要求回覆。"},
+            {"item": "導流貢獻(ROAS)",  "weight": 0.20, "help": "100分: >50筆詢單"}
         ],
         "excellent": [
             {"item": "KR1: 爆款影片",     "weight": 0.33, "help": "流量突破性指標"},
@@ -285,10 +368,10 @@ if 'config_data' not in st.session_state:
     DESIGN_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
-            {"item": "素材完成時效", "weight": 0.30, "help": "100分: 提前1天完成; 85分: 準時"},
-            {"item": "設計修改次數", "weight": 0.30, "help": "100分: 一次過稿; 85分: 修改2次內"},
+            {"item": "素材完成時效",  "weight": 0.30, "help": "100分: 提前1天完成; 85分: 準時"},
+            {"item": "設計修改次數",  "weight": 0.30, "help": "100分: 一次過稿; 85分: 修改2次內"},
             {"item": "版權與品牌規範","weight": 0.20, "help": "【法遵紅線】盜版致侵權負賠償責任。"},
-            {"item": "點擊率(CTR)",  "weight": 0.20, "help": "100分: 高於平均20%"}
+            {"item": "點擊率(CTR)",   "weight": 0.20, "help": "100分: 高於平均20%"}
         ],
         "excellent": [
             {"item": "KR1: A/B Test提案", "weight": 0.33, "help": "主動測試素材成效"},
@@ -302,10 +385,10 @@ if 'config_data' not in st.session_state:
     GENERAL_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
-            {"item": "作業準確度",     "weight": 0.25, "help": "【法遵紅線】導致政府罰款連動績效。"},
-            {"item": "電商撥款對帳",   "weight": 0.35, "help": "防舞弊核心。100分: 完全一致"},
-            {"item": "專案/發薪時效",  "weight": 0.20, "help": "【法遵紅線】遲發薪水具勞檢風險。"},
-            {"item": "跨部門協作",     "weight": 0.20, "help": "90分: 產出SOP無投訴"}
+            {"item": "作業準確度",    "weight": 0.25, "help": "【法遵紅線】導致政府罰款連動績效。"},
+            {"item": "電商撥款對帳",  "weight": 0.35, "help": "防舞弊核心。100分: 完全一致"},
+            {"item": "專案/發薪時效", "weight": 0.20, "help": "【法遵紅線】遲發薪水具勞檢風險。"},
+            {"item": "跨部門協作",    "weight": 0.20, "help": "90分: 產出SOP無投訴"}
         ],
         "excellent": [
             {"item": "KR1: 流程優化", "weight": 0.33, "help": "簡化跨部門溝通成本"},
@@ -317,10 +400,10 @@ if 'config_data' not in st.session_state:
         "text_b": [{"title": "O (目標): 提升組織效率", "content": "優化現有流程，降低溝通成本"}]
     }
     st.session_state.config_data = {
-        "電商專員":    ECOMMERCE_TEMPLATE,
-        "自媒體/行銷": MEDIA_TEMPLATE,
+        "電商專員":      ECOMMERCE_TEMPLATE,
+        "自媒體/行銷":   MEDIA_TEMPLATE,
         "社群編輯/美編": DESIGN_TEMPLATE,
-        "會計/行政":   GENERAL_TEMPLATE,
+        "會計/行政":     GENERAL_TEMPLATE,
     }
 
 if 'batch_queue' not in st.session_state:
@@ -338,7 +421,8 @@ if 'confirm_clear' not in st.session_state:
     st.session_state.confirm_clear = False
 
 JOB_LEVELS = ["助理", "專員", "資深專員", "組長", "副理", "經理", "總監"]
-DEPT_LIST   = list(st.session_state.config_data.keys())
+DEPT_LIST  = list(st.session_state.config_data.keys())
+
 
 # ==========================================
 # 側邊欄
@@ -346,7 +430,7 @@ DEPT_LIST   = list(st.session_state.config_data.keys())
 with st.sidebar:
     lc = st.session_state.logo_config
     if lc["use_image"] and lc["image_b64"]:
-        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:72px; height:72px; object-fit:contain; border-radius:12px;">'
+        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:72px;height:72px;object-fit:contain;border-radius:12px;">'
     else:
         logo_html = f'<div class="sidebar-logo-icon">{lc["emoji"]}</div>'
 
@@ -357,7 +441,8 @@ with st.sidebar:
         <div class="sidebar-logo-sub">{lc["system_name"]}</div>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.write("")
 
     menu = st.radio(
         "導覽選單",
@@ -366,23 +451,23 @@ with st.sidebar:
         label_visibility="collapsed"
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("")
+
     if st.session_state.batch_queue:
         st.info(f"⏳ 待上傳 {len(st.session_state.batch_queue)} 筆紀錄")
+
 
 # ==========================================
 # 頁面 1：新增人員評核
 # ==========================================
 if menu == "📝 新增評核":
     st.markdown("""
-    <div class="page-header">
-      <div class="page-header-inner">
+    <div class="page-header-inner">
         <div class="page-header-icon-wrap">📝</div>
         <div class="page-header-text">
-          <h2>新增人員評核</h2>
-          <p>填寫基本資料與各維度評分，完成後執行計算</p>
+            <h2>新增人員評核</h2>
+            <p>填寫基本資料與各維度評分，完成後執行計算</p>
         </div>
-      </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -395,15 +480,16 @@ if menu == "📝 新增評核":
             input_supervisor = st.text_input("評分主管",   placeholder="直屬主管姓名...")
             col_d1, col_d2   = st.columns(2)
             with col_d1:
-                input_dept   = st.selectbox("所屬部門", options=DEPT_LIST)
+                input_dept  = st.selectbox("所屬部門", options=DEPT_LIST)
             with col_d2:
-                input_level  = st.selectbox("職稱職等", options=JOB_LEVELS)
+                input_level = st.selectbox("職稱職等", options=JOB_LEVELS)
             input_date = st.date_input("評核月份", value=datetime.now())
 
         current_config = st.session_state.config_data[input_dept]
+
         with st.container(border=True):
             st.markdown('<div class="section-label"><span>2</span>職務目標設定</div>', unsafe_allow_html=True)
-            st.markdown('<div style="font-size:12px; font-weight:700; color:#0EAFA0; margin-bottom:10px; letter-spacing:1px;">▸ A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:12px;font-weight:700;color:#0EAFA0;margin-bottom:10px;">▸ A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
             for i, row in enumerate(current_config['text_a']):
                 st.text_area(
                     row['title'], value=row['content'], height=80,
@@ -411,7 +497,7 @@ if menu == "📝 新增評核":
                     on_change=update_target_content,
                     args=(input_dept, 'text_a', i, f"t_a_{input_dept}_{i}")
                 )
-            st.markdown('<div style="font-size:12px; font-weight:700; color:#3B6FE8; margin:14px 0 10px; letter-spacing:1px;">▸ B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:12px;font-weight:700;color:#3B6FE8;margin:14px 0 10px;">▸ B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
             for i, row in enumerate(current_config['text_b']):
                 st.text_area(
                     row['title'], value=row['content'], height=80,
@@ -423,7 +509,7 @@ if menu == "📝 新增評核":
     with col_r:
         wa, wb, wc = current_config['section_weights']
 
-        with st.form("score_form_v37", border=True):
+        with st.form("score_form_v38", border=True):
             st.markdown('<div class="section-label"><span>3</span>績效評分維度</div>', unsafe_allow_html=True)
 
             # ── A 區 ──
@@ -433,31 +519,31 @@ if menu == "📝 新增評核":
                 <span class="ssh-badge ssh-badge-a">權重 {int(wa*100)}%</span>
             </div>
             """, unsafe_allow_html=True)
+
             scores_a = []
             for i, row in enumerate(current_config['basic']):
-                is_warning = '法遵' in row.get('help', '')
-                help_cls   = 'warning' if is_warning else ''
-
+                is_warn = '法遵' in row.get('help', '')
                 st.markdown('<div class="score-item-container">', unsafe_allow_html=True)
                 c_lbl, c_val = st.columns([2.5, 1])
                 with c_lbl:
+                    help_block = ""
+                    if row.get('help'):
+                        cls    = "score-help-warn" if is_warn else "score-help"
+                        prefix = "⚠ " if is_warn else "ℹ "
+                        help_block = f'<div class="{cls}">{prefix}{row["help"]}</div>'
                     st.markdown(f"""
-                    <div class="score-info">
-                        <div class="score-title-wrap">
-                            <span class="score-title">{row['item']}</span>
-                            <span class="score-weight">×{int(row['weight']*100)}%</span>
-                        </div>
-                        {'<div class="score-help ' + help_cls + '">' + ("⚠ " if is_warning else "ℹ ") + row["help"] + '</div>' if row.get('help') else ''}
+                    <div class="score-title-wrap">
+                        <span class="score-title">{row['item']}</span>
+                        <span class="score-weight">×{int(row['weight']*100)}%</span>
                     </div>
+                    {help_block}
                     """, unsafe_allow_html=True)
                 with c_val:
-                    st.markdown('<div style="margin-top: 5px;">', unsafe_allow_html=True)
-                    val = st.number_input(f"分數 ({row['item']})", -100, 100, 80, 5, key=f"va_{i}", label_visibility="collapsed")
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    val = st.number_input(f"A{i}", -100, 100, 80, 5, key=f"va_{i}", label_visibility="collapsed")
                     scores_a.append(val * row['weight'])
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.write("")
 
             # ── B 區 ──
             st.markdown(f"""
@@ -466,31 +552,31 @@ if menu == "📝 新增評核":
                 <span class="ssh-badge ssh-badge-b">權重 {int(wb*100)}%</span>
             </div>
             """, unsafe_allow_html=True)
+
             scores_b = []
             for i, row in enumerate(current_config['excellent']):
-                is_warning = '法遵' in row.get('help', '')
-                help_cls   = 'warning' if is_warning else ''
-
+                is_warn = '法遵' in row.get('help', '')
                 st.markdown('<div class="score-item-container">', unsafe_allow_html=True)
                 c_lbl, c_val = st.columns([2.5, 1])
                 with c_lbl:
+                    help_block = ""
+                    if row.get('help'):
+                        cls    = "score-help-warn" if is_warn else "score-help"
+                        prefix = "⚠ " if is_warn else "ℹ "
+                        help_block = f'<div class="{cls}">{prefix}{row["help"]}</div>'
                     st.markdown(f"""
-                    <div class="score-info">
-                        <div class="score-title-wrap">
-                            <span class="score-title">{row['item']}</span>
-                            <span class="score-weight">×{int(row['weight']*100)}%</span>
-                        </div>
-                        {'<div class="score-help ' + help_cls + '">' + ("⚠ " if is_warning else "ℹ ") + row["help"] + '</div>' if row.get('help') else ''}
+                    <div class="score-title-wrap">
+                        <span class="score-title">{row['item']}</span>
+                        <span class="score-weight">×{int(row['weight']*100)}%</span>
                     </div>
+                    {help_block}
                     """, unsafe_allow_html=True)
                 with c_val:
-                    st.markdown('<div style="margin-top: 5px;">', unsafe_allow_html=True)
-                    val = st.number_input(f"分數 ({row['item']})", 0, 100, 80, 5, key=f"vb_{i}", label_visibility="collapsed")
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    val = st.number_input(f"B{i}", 0, 100, 80, 5, key=f"vb_{i}", label_visibility="collapsed")
                     scores_b.append(val * row['weight'])
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.write("")
 
             # ── C 區 ──
             st.markdown(f"""
@@ -499,33 +585,36 @@ if menu == "📝 新增評核":
                 <span class="ssh-badge ssh-badge-c">權重 {int(wc*100)}%</span>
             </div>
             """, unsafe_allow_html=True)
+
             col_c1, col_c2 = st.columns([1, 2.5])
             with col_c1:
-                st.markdown('<div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px; font-weight: 700;">綜合給分 (1–10)</div>', unsafe_allow_html=True)
-                c_mgr_score = st.selectbox("綜合給分", options=range(1, 11), index=7, label_visibility="collapsed")
+                st.caption("綜合給分 (1–10)")
+                c_mgr_score = st.selectbox("給分", options=range(1, 11), index=7, label_visibility="collapsed")
             with col_c2:
-                st.markdown('<div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px; font-weight: 700;">主管反饋建議（必填）</div>', unsafe_allow_html=True)
-                c_mgr_comment = st.text_area("主管反饋建議", placeholder="請輸入評價與改善建議...", height=100, label_visibility="collapsed")
+                st.caption("主管反饋建議（必填）")
+                c_mgr_comment = st.text_area("反饋", placeholder="請輸入評價與改善建議...", height=100, label_visibility="collapsed")
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("⚖ 執行計算並鎖定分數")
+            st.write("")
+            submitted = st.form_submit_button("⚖ 執行計算並鎖定分數", use_container_width=True)
 
         if submitted:
             if not input_name:
                 st.error("⚠ 請輸入受評人姓名！")
             else:
-                raw_score = (sum(scores_a) * wa) + (sum(scores_b) * wb) + (c_mgr_score * 10 * wc)
+                raw_score   = (sum(scores_a) * wa) + (sum(scores_b) * wb) + (c_mgr_score * 10 * wc)
                 final_score = max(0.0, min(100.0, raw_score))
 
-                a_details = [f"✓ {row['item']}: {st.session_state[f'va_{i}']}" for i, row in enumerate(current_config['basic'])]
-                b_details = [f"✓ {row['item']}: {st.session_state[f'vb_{i}']}" for i, row in enumerate(current_config['excellent'])]
+                a_details    = [f"✓ {row['item']}: {st.session_state[f'va_{i}']}" for i, row in enumerate(current_config['basic'])]
+                b_details    = [f"✓ {row['item']}: {st.session_state[f'vb_{i}']}" for i, row in enumerate(current_config['excellent'])]
                 text_records = [f"【{row['title']}】\n{st.session_state.get(f't_a_{input_dept}_{i}', row['content'])}" for i, row in enumerate(current_config['text_a'])]
                 text_records += [f"【{row['title']}】\n{st.session_state.get(f't_b_{input_dept}_{i}', row['content'])}" for i, row in enumerate(current_config['text_b'])]
+
                 st.session_state.calculated_score_data = {
                     "score": final_score,
                     "meta": {
-                        "name": input_name, "dept": input_dept, "supervisor": input_supervisor,
-                        "date": str(input_date), "level": input_level, "comment": c_mgr_comment,
+                        "name": input_name, "dept": input_dept,
+                        "supervisor": input_supervisor, "date": str(input_date),
+                        "level": input_level, "comment": c_mgr_comment,
                         "a_detail_str": "\n".join(a_details),
                         "b_detail_str": "\n".join(b_details),
                         "text_record_str": "\n\n".join(text_records)
@@ -535,11 +624,11 @@ if menu == "📝 新增評核":
 
         # ── 結果區 ──
         if st.session_state.calculated_score_data:
-            st.markdown('<br>', unsafe_allow_html=True)
+            st.write("")
             res = st.session_state.calculated_score_data
             grade_t, grade_m, grade_c = calculate_dynamic_bonus(res['score'], st.session_state.bonus_rules)
 
-            col_res1, col_res2 = st.columns([1, 1], gap="large")
+            col_res1, col_res2 = st.columns(2, gap="large")
 
             with col_res1:
                 with st.container(border=True):
@@ -548,8 +637,8 @@ if menu == "📝 新增評核":
                     <div class="result-panel">
                         <div class="result-score-label">最終核定總分</div>
                         <div class="result-score-value">{res['score']:.2f}</div>
-                        <div class="result-grade-badge" style="background:{grade_c}22; color:{grade_c}; border:1px solid {grade_c}44;">{grade_t}</div>
-                        <div class="result-bonus-text">建議核發獎金 <strong style="color:var(--text-primary); font-size:16px;">{grade_m}</strong> 個月</div>
+                        <div class="result-grade-badge" style="background:{grade_c}22;color:{grade_c};border:1px solid {grade_c}44;">{grade_t}</div>
+                        <div style="font-size:13px;color:var(--text-muted);">建議核發獎金 <strong style="color:var(--text-primary);font-size:16px;">{grade_m}</strong> 個月</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -558,7 +647,7 @@ if menu == "📝 新增評核":
                     st.markdown('<div class="section-label" style="margin-top:0;"><span>5</span>獎金確認與上傳</div>', unsafe_allow_html=True)
                     base      = st.number_input("本薪基數（元）", 0, 200000, 30000, 1000)
                     final_amt = st.number_input("確認實發金額（元）", 0, 500000, int(base * grade_m))
-                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.write("")
                     if st.button("➕ 加入待傳清單", use_container_width=True):
                         meta = res['meta']
                         full_data = {
@@ -573,19 +662,18 @@ if menu == "📝 新增評核":
                         st.session_state.batch_queue.append(full_data)
                         st.toast(f"✅ 已暫存 {meta['name']} 的紀錄")
 
+
 # ==========================================
 # 頁面 2：雲端評核紀錄
 # ==========================================
 elif menu == "📋 雲端紀錄":
     st.markdown("""
-    <div class="page-header">
-      <div class="page-header-inner">
+    <div class="page-header-inner">
         <div class="page-header-icon-wrap">📋</div>
         <div class="page-header-text">
-          <h2>雲端評核紀錄資料庫</h2>
-          <p>查詢歷史評核資料，管理待上傳佇列</p>
+            <h2>雲端評核紀錄資料庫</h2>
+            <p>查詢歷史評核資料，管理待上傳佇列</p>
         </div>
-      </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -597,21 +685,20 @@ elif menu == "📋 雲端紀錄":
                 with st.spinner("同步中..."):
                     try:
                         df = conn.read(worksheet="評核紀錄")
-                        if isinstance(df, pd.DataFrame):
-                            st.session_state.cloud_data_cache = df.dropna(how='all')
-                        else:
-                            st.session_state.cloud_data_cache = pd.DataFrame()
+                        st.session_state.cloud_data_cache = df.dropna(how='all') if isinstance(df, pd.DataFrame) else pd.DataFrame()
                         st.success("同步完成")
                     except Exception as e:
                         st.error(f"讀取錯誤: {e}")
             else:
                 st.error(tp)
 
-    # 待傳緩衝區
     if st.session_state.batch_queue:
         with st.container(border=True):
             st.markdown('<div class="section-label" style="margin-top:0;"><span>↑</span>上傳緩衝區</div>', unsafe_allow_html=True)
-            st.dataframe(pd.DataFrame(st.session_state.batch_queue)[['受評姓名', '部門', '總分', '評等', '實得獎金']], hide_index=True, use_container_width=True)
+            st.dataframe(
+                pd.DataFrame(st.session_state.batch_queue)[['受評姓名', '部門', '總分', '評等', '實得獎金']],
+                hide_index=True, use_container_width=True
+            )
             col_up1, col_up2, _ = st.columns([1, 1, 2])
             with col_up1:
                 if st.button("🚀 正式上傳雲端", use_container_width=True, type="primary"):
@@ -626,7 +713,7 @@ elif menu == "📋 雲端紀錄":
                                     old = pd.DataFrame()
                                 new = pd.concat([old, pd.DataFrame(st.session_state.batch_queue)], ignore_index=True)
                                 conn.update(worksheet="評核紀錄", data=new)
-                                st.session_state.batch_queue   = []
+                                st.session_state.batch_queue      = []
                                 st.session_state.cloud_data_cache = new
                                 st.success("寫入成功！")
                                 st.balloons()
@@ -642,14 +729,13 @@ elif menu == "📋 雲端紀錄":
                 else:
                     c_y, c_n = st.columns(2)
                     if c_y.button("⚠ 確定刪除", use_container_width=True):
-                        st.session_state.batch_queue = []
+                        st.session_state.batch_queue   = []
                         st.session_state.confirm_clear = False
                         st.rerun()
                     if c_n.button("取消", use_container_width=True):
                         st.session_state.confirm_clear = False
                         st.rerun()
 
-    # 歷史資料
     with st.container(border=True):
         st.markdown('<div class="section-label" style="margin-top:0;"><span>◈</span>歷史資料檢視</div>', unsafe_allow_html=True)
 
@@ -669,7 +755,7 @@ elif menu == "📋 雲端紀錄":
                 m_list = ["全部"] + list(df['評分日期'].astype(str).str[:7].unique())
                 s_m    = st.selectbox("過濾月份", m_list, label_visibility="collapsed")
 
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.write("")
 
             if s_m != "全部":
                 df = df[df['評分日期'].astype(str).str.startswith(s_m)]
@@ -677,14 +763,15 @@ elif menu == "📋 雲端紀錄":
 
             cols = st.columns(3)
             for i, row in df.iterrows():
-                score_val = row.get('總分', '—')
-                grade_val = row.get('評等', '')
+                score_val  = row.get('總分', '—')
+                grade_val  = row.get('評等', '')
                 rule_color = "#8B93B0"
                 for r in st.session_state.bonus_rules:
                     if r['grade'] == grade_val:
                         rule_color = r['color']
                         break
-                comment_preview = str(row.get('主管評語', ''))[:35] + '…' if len(str(row.get('主管評語', ''))) > 35 else str(row.get('主管評語', ''))
+                raw_comment     = str(row.get('主管評語', ''))
+                comment_preview = raw_comment[:35] + '…' if len(raw_comment) > 35 else raw_comment
                 with cols[i % 3]:
                     st.markdown(f"""
                     <div class="history-card">
@@ -694,10 +781,12 @@ elif menu == "📋 雲端紀錄":
                         </div>
                         <div>
                             <span class="history-card-score">{score_val}</span>
-                            <span class="history-card-grade" style="color:{rule_color}; background:{rule_color}11; padding: 2px 8px; border-radius: 10px;">{grade_val}</span>
+                            <span style="color:{rule_color};background:{rule_color}11;padding:2px 8px;border-radius:10px;font-size:12px;">{grade_val}</span>
                         </div>
-                        <div class="history-card-meta">主管：{row.get('評分主管', '')} &nbsp;|&nbsp; 日期：{row.get('評分日期', '')}</div>
-                        <div class="history-card-comment">"{comment_preview}"</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                            主管：{row.get('評分主管', '')} &nbsp;|&nbsp; 日期：{row.get('評分日期', '')}
+                        </div>
+                        <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">"{comment_preview}"</div>
                     </div>
                     """, unsafe_allow_html=True)
                     with st.expander("查看詳情"):
@@ -713,19 +802,18 @@ elif menu == "📋 雲端紀錄":
         else:
             st.info("請點擊上方按鈕同步雲端紀錄。")
 
+
 # ==========================================
 # 頁面 3：參數設定
 # ==========================================
 elif menu == "⚙️ 參數設定":
     st.markdown("""
-    <div class="page-header">
-      <div class="page-header-inner">
+    <div class="page-header-inner">
         <div class="page-header-icon-wrap">⚙️</div>
         <div class="page-header-text">
-          <h2>系統參數維護</h2>
-          <p>調整獎金級距、部門考核項目與品牌識別</p>
+            <h2>系統參數維護</h2>
+            <p>調整獎金級距、部門考核項目與品牌識別</p>
         </div>
-      </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -733,9 +821,9 @@ elif menu == "⚙️ 參數設定":
         tab1, tab2, tab3 = st.tabs(["💰 獎金級距設定", "📋 部門考核項目", "🎨 品牌 LOGO 設定"])
 
         with tab1:
-            st.caption("修改各等級的最低分門檻、獎金月數與 Hex 顏色碼（建議搭配系統色票）")
-            df_b  = pd.DataFrame(st.session_state.bonus_rules)
-            ed_b  = st.data_editor(df_b, num_rows="dynamic", use_container_width=True)
+            st.caption("修改各等級的最低分門檻、獎金月數與 Hex 顏色碼")
+            df_b = pd.DataFrame(st.session_state.bonus_rules)
+            ed_b = st.data_editor(df_b, num_rows="dynamic", use_container_width=True)
             st.session_state.bonus_rules = ed_b.to_dict('records')
 
         with tab2:
@@ -744,32 +832,32 @@ elif menu == "⚙️ 參數設定":
 
             total_w = sum(conf['section_weights'])
             if abs(total_w - 1.0) > 0.01:
-                st.error(f"⚠ 注意：目前 A/B/C 三區權重總和為 {total_w*100}%，建議調整為 100%。")
+                st.error(f"⚠ 注意：目前三區權重總和為 {total_w*100:.0f}%，建議調整為 100%。")
 
             col_w1, col_w2, col_w3 = st.columns(3)
-            nw_a = col_w1.number_input("A區權重 (KPI)", value=conf['section_weights'][0], step=0.05)
-            nw_b = col_w2.number_input("B區權重 (OKR)", value=conf['section_weights'][1], step=0.05)
+            nw_a = col_w1.number_input("A區權重 (KPI)",  value=conf['section_weights'][0], step=0.05)
+            nw_b = col_w2.number_input("B區權重 (OKR)",  value=conf['section_weights'][1], step=0.05)
             nw_c = col_w3.number_input("C區權重 (主管)", value=conf['section_weights'][2], step=0.05)
             st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
 
-            st.markdown('<div style="font-size:14px; color:var(--accent-teal); font-weight:700; margin: 20px 0 8px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
-            ed_a = st.data_editor(pd.DataFrame(conf['basic']), num_rows="dynamic", use_container_width=True, key=f"edit_a_{edit_dept}")
+            st.markdown('<div style="font-size:14px;color:#0EAFA0;font-weight:700;margin:20px 0 8px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
+            ed_a = st.data_editor(pd.DataFrame(conf['basic']),     num_rows="dynamic", use_container_width=True, key=f"edit_a_{edit_dept}")
             st.session_state.config_data[edit_dept]['basic'] = ed_a.to_dict('records')
 
-            st.markdown('<div style="font-size:14px; color:var(--accent-blue); font-weight:700; margin: 20px 0 8px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:14px;color:#3B6FE8;font-weight:700;margin:20px 0 8px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
             ed_b = st.data_editor(pd.DataFrame(conf['excellent']), num_rows="dynamic", use_container_width=True, key=f"edit_b_{edit_dept}")
             st.session_state.config_data[edit_dept]['excellent'] = ed_b.to_dict('records')
 
         with tab3:
             st.caption("自訂顯示在側邊欄的品牌識別，支援上傳圖片或使用 Emoji 圖示。")
             lc = st.session_state.logo_config
-            col_lg1, col_lg2 = st.columns([1, 1], gap="large")
+            col_lg1, col_lg2 = st.columns(2, gap="large")
             with col_lg1:
                 new_company = st.text_input("公司名稱", value=lc["company_name"])
                 new_sysname = st.text_input("系統名稱", value=lc["system_name"])
-                new_emoji   = st.text_input("Emoji 圖示（無上傳圖片時顯示）", value=lc["emoji"])
+                new_emoji   = st.text_input("Emoji 圖示", value=lc["emoji"])
             with col_lg2:
-                st.markdown('<div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-bottom:8px;">上傳 LOGO 圖片（PNG / JPG，建議正方形）</div>', unsafe_allow_html=True)
+                st.caption("上傳 LOGO 圖片（PNG / JPG，建議正方形）")
                 uploaded_logo = st.file_uploader("上傳 LOGO", type=["png","jpg","jpeg"], label_visibility="collapsed")
                 if uploaded_logo:
                     import base64
@@ -778,7 +866,7 @@ elif menu == "⚙️ 參數設定":
                     st.session_state.logo_config["use_image"] = True
                     st.success("✅ 圖片已上傳，儲存後生效")
                 if lc["use_image"] and lc["image_b64"]:
-                    st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:80px; height:80px; object-fit:contain; border-radius:12px; border:1px solid var(--border); margin-top:8px;">', unsafe_allow_html=True)
+                    st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:80px;height:80px;object-fit:contain;border-radius:12px;border:1px solid #DDE1EE;margin-top:8px;">', unsafe_allow_html=True)
                     if st.button("🗑 移除圖片，改用 Emoji"):
                         st.session_state.logo_config["use_image"] = False
                         st.session_state.logo_config["image_b64"] = None
@@ -787,14 +875,15 @@ elif menu == "⚙️ 參數設定":
             st.session_state.logo_config["system_name"]  = new_sysname
             st.session_state.logo_config["emoji"]        = new_emoji
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.write("")
         if st.button("💾 儲存並套用設定", type="primary"):
             st.rerun()
+
 
 # --- Footer ---
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v37.0 - 側邊欄導航修復</p>
+    <p style="font-size:10px;">系統版本 v38.0 - Sidebar 穩固修復版</p>
 </div>
 """, unsafe_allow_html=True)
