@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import io
 import os
 import json
 
@@ -19,29 +20,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS：完全不碰 sidebar、header、toolbar 的 DOM ---
+# --- 2. CSS：安全美化，修復字體與側邊欄 ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap');
     @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-
-    /* ===== 修復 Material Icons 字體未載入時顯示文字的問題 ===== */
-    .material-icons {
-        font-family: 'Material Icons' !important;
-        font-style: normal !important;
-        font-weight: normal !important;
-        font-size: 24px !important;
-        line-height: 1 !important;
-        letter-spacing: normal !important;
-        text-transform: none !important;
-        display: inline-block !important;
-        white-space: nowrap !important;
-        word-wrap: normal !important;
-        direction: ltr !important;
-        -webkit-font-feature-settings: 'liga' !important;
-        font-feature-settings: 'liga' !important;
-        -webkit-font-smoothing: antialiased !important;
-    }
 
     :root {
         --bg-base:       #F0F2F7;
@@ -60,115 +43,118 @@ st.markdown("""
         --accent-violet: #6C4FD4;
     }
 
-    /* ===== 主體背景 ===== */
-    .stApp { background-color: var(--bg-base) !important; }
-
-    /* 精準指定字體，避免蓋掉 Material Icons 的字體設定 */
-    .stApp p, .stApp div, .stApp label,
-    .stApp input, .stApp textarea, .stApp button, .stApp select {
+    /* ===== 主體背景與溫和字體繼承 (修復淺灰英文 Icon 問題) ===== */
+    html, body, [class*="css"] {
         font-family: 'Noto Sans TC', sans-serif;
     }
+    .stApp { background-color: var(--bg-base) !important; color: var(--text-primary); }
 
-    /* ===== 主內容區 ===== */
+    /* 保護 Material Icons 不被中文字體覆寫 */
+    .material-icons, [data-testid="collapsedControl"] svg, .st-emotion-cache-1bz1hzt svg {
+        font-family: 'Material Icons' !important;
+    }
+
+    /* ===== 安全隱藏不需要的元件，保留展開按鈕 ===== */
+    .stDeployButton { display: none !important; }
+    #MainMenu { display: none !important; }
+    [data-testid="stHeader"] { background-color: transparent !important; }
+    [data-testid="stToolbar"] { display: none !important; }
+
+    /* ===== 主容器邊距 ===== */
     .block-container {
         padding-top: 2rem !important;
         padding-bottom: 3rem !important;
         max-width: 96%;
     }
 
-    /* ===== 側邊欄樣式（只美化，不控制顯示） ===== */
+    /* ===== 側邊欄安全美化 ===== */
     section[data-testid="stSidebar"] {
         background-color: var(--bg-surface) !important;
         border-right: 1px solid var(--border) !important;
     }
+    section[data-testid="stSidebar"] hr { border-color: var(--border) !important; margin: 12px 0 16px 0; }
+    
+    /* ===== 側邊欄 Radio 導航完美版 (保留點擊事件 + 隱藏原生圓點) ===== */
+    [data-testid="stSidebar"] .stRadio [role="radiogroup"] { 
+        background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 12px !important; gap: 4px !important; 
+    }
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] { 
+        cursor: pointer !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: transparent !important; 
+    }
+    /* 安全隱藏圓點，保留 input 的 DOM 事件觸發能力 */
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child { 
+        position: absolute !important; opacity: 0 !important; width: 0 !important; height: 0 !important; overflow: hidden !important;
+    }
+    /* 將選單樣式綁定在文字容器上 */
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:last-child {
+        color: var(--text-secondary) !important; font-size: 14px !important; font-weight: 500 !important;
+        padding: 10px 16px !important; border-radius: 8px !important; margin: 2px 0 !important;
+        transition: all 0.15s ease !important; display: block !important; width: 100% !important;
+        border-left: 3px solid transparent !important; background: transparent !important;
+    }
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"]:hover > div:last-child { 
+        background: var(--bg-hover) !important; color: var(--text-primary) !important; 
+    }
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"][aria-checked="true"] > div:last-child {
+        background: rgba(59,111,232,0.08) !important; color: var(--accent-blue) !important;
+        border-left: 3px solid var(--accent-blue) !important; font-weight: 700 !important; padding-left: 13px !important;
+    }
 
-    /* ===== 側邊欄 Radio 美化 ===== */
-    section[data-testid="stSidebar"] .stRadio > div {
-        gap: 4px !important;
-    }
-    section[data-testid="stSidebar"] .stRadio label {
-        cursor: pointer !important;
-        border-radius: 8px !important;
-        padding: 8px 12px !important;
-        transition: background 0.15s !important;
-    }
-    section[data-testid="stSidebar"] .stRadio label:hover {
-        background: var(--bg-hover) !important;
-    }
+    /* Logo 區 */
+    .sidebar-logo { background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%); padding: 28px 20px 22px; border-bottom: 1px solid var(--border); text-align: center; }
+    .sidebar-logo-icon { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 10px rgba(59,111,232,0.25)); }
+    .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 12px 0 4px 0; }
+    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
 
-    /* ===== 原生容器卡片 ===== */
+    /* ===== 原生容器卡片統一風格 ===== */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 14px !important;
-        padding: 24px !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.02) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
         margin-bottom: 16px !important;
     }
 
     /* ===== 頁面大標題 ===== */
     .page-header-inner {
-        display: flex;
-        align-items: center;
-        gap: 20px;
+        display: flex; align-items: center; gap: 20px;
         padding: 22px 28px 22px 34px;
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(59,111,232,0.06);
-        position: relative;
-        margin-bottom: 24px;
-        overflow: hidden;
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 16px; box-shadow: 0 2px 12px rgba(59,111,232,0.06);
+        position: relative; margin-bottom: 24px; overflow: hidden;
     }
     .page-header-inner::before {
-        content: '';
-        position: absolute;
-        left: 0; top: 0; bottom: 0;
-        width: 5px;
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
         background: linear-gradient(180deg, var(--accent-blue) 0%, var(--accent-teal) 100%);
         border-radius: 16px 0 0 16px;
     }
     .page-header-icon-wrap {
         width: 54px; height: 54px; flex-shrink: 0;
         background: linear-gradient(135deg, rgba(59,111,232,0.10) 0%, rgba(14,175,160,0.07) 100%);
-        border: 1px solid rgba(59,111,232,0.16);
-        border-radius: 14px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 28px;
+        border: 1px solid rgba(59,111,232,0.16); border-radius: 14px;
+        display: flex; align-items: center; justify-content: center; font-size: 28px;
     }
-    .page-header-text h2 {
-        margin: 0 0 5px 0;
-        color: var(--text-primary);
-        font-size: 22px; font-weight: 800;
-        line-height: 1.2;
-    }
-    .page-header-text p {
-        margin: 0;
-        color: var(--text-muted);
-        font-size: 13px;
-    }
+    .page-header-text h2 { margin: 0 0 5px 0; color: var(--text-primary); font-size: 22px; font-weight: 800; line-height: 1.2; }
+    .page-header-text p { margin: 0; color: var(--text-muted); font-size: 13px; }
 
-    /* ===== 步驟標籤 ===== */
+    /* ===== 步驟標籤 (完美消除頂部空白) ===== */
     .section-label {
         display: flex; align-items: center; gap: 10px;
-        font-size: 14px; font-weight: 800;
+        font-size: 15px; font-weight: 800;
         color: var(--text-primary); letter-spacing: 1px;
-        margin: 0 0 20px 0; padding-bottom: 14px;
+        /* 負的 margin-top 吃掉容器預設的 padding */
+        margin: -8px 0 20px 0; 
+        padding-bottom: 12px;
         border-bottom: 2px solid var(--bg-hover);
     }
     .section-label span {
         display: inline-flex; align-items: center; justify-content: center;
-        width: 24px; height: 24px;
-        background: var(--accent-blue);
-        border-radius: 6px; font-size: 12px; font-weight: 800;
-        color: white; flex-shrink: 0;
+        width: 24px; height: 24px; background: var(--accent-blue);
+        border-radius: 6px; font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
     }
 
     /* ===== 評分區塊標題 ===== */
-    .score-section-header {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 13px 18px; border-radius: 10px; margin: 0 0 14px 0; border: 1px solid;
-    }
+    .score-section-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-radius: 10px; margin: 0 0 14px 0; border: 1px solid; }
     .ssh-a { background: rgba(14,175,160,0.05); border-color: rgba(14,175,160,0.22) !important; }
     .ssh-b { background: rgba(59,111,232,0.05); border-color: rgba(59,111,232,0.22) !important; }
     .ssh-c { background: rgba(212,130,10,0.05); border-color: rgba(212,130,10,0.22) !important; }
@@ -182,124 +168,39 @@ st.markdown("""
     .ssh-badge-c { background: rgba(212,130,10,0.11); color: var(--accent-amber); }
 
     /* ===== 評分項目列 ===== */
-    .score-item-container {
-        background: var(--bg-surface); border: 1px solid var(--border);
-        border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
-    }
+    .score-item-container { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
     .score-title-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
     .score-title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
-    .score-weight {
-        font-size: 11px; color: var(--accent-blue);
-        background: rgba(59,111,232,0.1); padding: 2px 6px;
-        border-radius: 4px; font-family: 'DM Mono', monospace;
-    }
+    .score-weight { font-size: 11px; color: var(--accent-blue); background: rgba(59,111,232,0.1); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; }
     .score-help { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-    .score-help-warn {
-        font-size: 11px; color: #D4820A;
-        background: rgba(212,130,10,0.08); padding: 3px 8px;
-        border-radius: 4px; display: inline-block;
-    }
+    .score-help-warn { font-size: 11px; color: #D4820A; background: rgba(212,130,10,0.08); padding: 3px 8px; border-radius: 4px; display: inline-block; }
 
     /* ===== 結果看板 ===== */
-    .result-panel {
-        background: var(--bg-surface); border: 1px solid var(--border);
-        border-radius: 14px; padding: 28px 24px; text-align: center;
-    }
-    .result-score-label {
-        font-size: 11px; font-weight: 700; color: var(--text-muted);
-        letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
-    }
-    .result-score-value {
-        font-size: 56px; font-weight: 900; color: var(--text-primary);
-        line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 14px;
-    }
-    .result-grade-badge {
-        display: inline-block; padding: 6px 20px; border-radius: 24px;
-        font-size: 14px; font-weight: 700; margin-bottom: 10px;
-    }
+    .result-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px; text-align: center; height: 100%; }
+    .result-score-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .result-score-value { font-size: 56px; font-weight: 900; color: var(--text-primary); line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 14px; }
+    .result-grade-badge { display: inline-block; padding: 6px 20px; border-radius: 24px; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
 
     /* ===== 歷史卡片 ===== */
-    .history-card {
-        background: var(--bg-surface); border: 1px solid var(--border);
-        border-radius: 12px; padding: 18px; margin-bottom: 12px;
-    }
+    .history-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
     .history-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
     .history-card-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-    .history-card-dept {
-        font-size: 11px; color: var(--text-muted);
-        background: var(--bg-elevated); border: 1px solid var(--border);
-        padding: 2px 8px; border-radius: 6px;
-    }
-    .history-card-score {
-        font-size: 28px; font-weight: 900;
-        color: var(--text-primary); font-family: 'DM Mono', monospace;
-    }
+    .history-card-dept { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .history-card-score { font-size: 28px; font-weight: 900; color: var(--text-primary); font-family: 'DM Mono', monospace; }
 
-    /* ===== Streamlit 元件 ===== */
-    .stTextInput input, .stNumberInput input, .stTextArea textarea {
-        background-color: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        color: var(--text-primary) !important;
-        font-size: 14px !important;
+    /* ===== Streamlit 輸入元件覆蓋 ===== */
+    .stTextInput input, .stNumberInput input, .stTextArea textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stDateInput"] input { 
+        background-color: var(--bg-elevated) !important; 
+        border: 1px solid var(--border) !important; 
+        border-radius: 8px !important; color: var(--text-primary) !important; font-size: 14px !important; 
     }
-    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-        border-color: var(--accent-blue) !important;
-        box-shadow: 0 0 0 3px rgba(59,111,232,0.10) !important;
-    }
-    .stButton > button {
-        background: var(--bg-surface) !important;
-        border: 1px solid var(--border-light) !important;
-        color: var(--text-secondary) !important;
-        border-radius: 8px !important; font-weight: 600 !important;
-        font-size: 13px !important; transition: all 0.15s !important;
-    }
-    .stButton > button:hover {
-        background: var(--bg-hover) !important;
-        border-color: var(--accent-blue) !important;
-        color: var(--text-primary) !important;
-    }
-    .stButton > button[kind="primary"] {
-        background: var(--accent-blue) !important;
-        border-color: var(--accent-blue) !important;
-        color: white !important;
-    }
-    .stFormSubmitButton > button {
-        background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important;
-        border: none !important; color: white !important;
-        font-size: 15px !important; font-weight: 700 !important;
-        padding: 14px !important; border-radius: 10px !important;
-        box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important;
-        width: 100% !important; margin-top: 10px;
-    }
-    [data-testid="stExpander"] {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
-    }
-    [data-testid="stSelectbox"] > div > div {
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-    }
-
-    /* ===== 側邊欄 Logo 區 ===== */
-    .sidebar-logo {
-        background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%);
-        padding: 28px 20px 22px; border-bottom: 1px solid var(--border); text-align: center;
-    }
-    .sidebar-logo-icon { font-size: 44px; line-height: 1; }
-    .sidebar-logo-title {
-        color: var(--text-primary); font-size: 18px; font-weight: 700;
-        letter-spacing: 3px; margin: 12px 0 4px 0;
-    }
-    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; }
-
-    /* ===== Footer ===== */
-    .system-footer {
-        text-align: center; padding: 30px 0; color: var(--text-muted);
-        font-size: 12px; margin-top: 40px; border-top: 1px solid var(--border);
-    }
+    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus { border-color: var(--accent-blue) !important; box-shadow: 0 0 0 3px rgba(59,111,232,0.10) !important; }
+    .stButton > button { background: var(--bg-surface) !important; border: 1px solid var(--border-light) !important; color: var(--text-secondary) !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 13px !important; transition: all 0.15s !important; }
+    .stButton > button:hover { background: var(--bg-hover) !important; border-color: var(--accent-blue) !important; color: var(--text-primary) !important; }
+    .stButton > button[kind="primary"] { background: var(--accent-blue) !important; border-color: var(--accent-blue) !important; color: white !important; }
+    .stFormSubmitButton > button { background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important; border: none !important; color: white !important; font-size: 15px !important; font-weight: 700 !important; padding: 14px !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important; width: 100% !important; margin-top: 10px; }
+    
+    .system-footer { text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 12px; margin-top: 40px; border-top: 1px solid var(--border); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -326,8 +227,8 @@ def get_gsheets_connection():
     is_legacy = False
     if not json_str and st.secrets.get("connections") and st.secrets["connections"].get("gsheets") and "client_email" in st.secrets["connections"]["gsheets"]:
         is_legacy = True
-    if not spreadsheet_url:
-        return None, "未設定網址"
+    if not spreadsheet_url: return None, "未設定網址"
+
     temp_key_path = "/tmp/gsheets_key.json"
     os.makedirs("/tmp", exist_ok=True)
     try:
@@ -339,8 +240,7 @@ def get_gsheets_connection():
             with open(temp_key_path, "w") as f: json.dump(json.loads(json_str), f)
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
         return st.connection("gsheets", type=GSheetsConnection), temp_key_path
-    except Exception as e:
-        return None, str(e)
+    except Exception as e: return None, str(e)
 
 
 # --- 4. 初始化資料 ---
@@ -409,10 +309,10 @@ if 'config_data' not in st.session_state:
     GENERAL_TEMPLATE = {
         "section_weights": [0.50, 0.30, 0.20],
         "basic": [
-            {"item": "作業準確度",    "weight": 0.25, "help": "【法遵紅線】導致政府罰款連動績效。"},
-            {"item": "電商撥款對帳",  "weight": 0.35, "help": "防舞弊核心。100分: 完全一致"},
-            {"item": "專案/發薪時效", "weight": 0.20, "help": "【法遵紅線】遲發薪水具勞檢風險。"},
-            {"item": "跨部門協作",    "weight": 0.20, "help": "90分: 產出SOP無投訴"}
+            {"item": "作業準確度",     "weight": 0.25, "help": "【法遵紅線】導致政府罰款連動績效。"},
+            {"item": "電商撥款對帳",   "weight": 0.35, "help": "防舞弊核心。100分: 完全一致"},
+            {"item": "專案/發薪時效",  "weight": 0.20, "help": "【法遵紅線】遲發薪水具勞檢風險。"},
+            {"item": "跨部門協作",     "weight": 0.20, "help": "90分: 產出SOP無投訴"}
         ],
         "excellent": [
             {"item": "KR1: 流程優化", "weight": 0.33, "help": "簡化跨部門溝通成本"},
@@ -498,6 +398,7 @@ if menu == "📝 新增評核":
     col_l, col_r = st.columns([1.15, 2], gap="large")
 
     with col_l:
+        # YES.md Fix: 標題置入卡片內，負邊距吃掉空白
         with st.container(border=True):
             st.markdown('<div class="section-label"><span>1</span>基本資料</div>', unsafe_allow_html=True)
             input_name       = st.text_input("受評人姓名", placeholder="輸入姓名...")
@@ -908,6 +809,6 @@ elif menu == "⚙️ 參數設定":
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v38.0 - Sidebar 穩固修復版</p>
+    <p style="font-size:10px;">系統版本 v38.0 - YES.md 字體圖示修復版</p>
 </div>
 """, unsafe_allow_html=True)
