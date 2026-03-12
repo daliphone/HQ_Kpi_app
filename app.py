@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS：安全美化，修復字體與側邊欄 ---
+# --- 2. CSS：安全美化，修復字體與側邊欄 (閱讀舒適放大版) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap');
@@ -43,9 +43,10 @@ st.markdown("""
         --accent-violet: #6C4FD4;
     }
 
-    /* ===== 主體背景與溫和字體繼承 ===== */
+    /* ===== 主體背景與溫和字體繼承 (全面加大字體) ===== */
     html, body, [class*="css"] {
         font-family: 'Noto Sans TC', sans-serif;
+        font-size: 16px !important;
     }
     .stApp { background-color: var(--bg-base) !important; color: var(--text-primary); }
 
@@ -75,7 +76,7 @@ st.markdown("""
     
     /* ===== 側邊欄 Radio 導航完美版 ===== */
     [data-testid="stSidebar"] .stRadio [role="radiogroup"] { 
-        background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 12px !important; gap: 4px !important; 
+        background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 12px !important; gap: 6px !important; 
     }
     [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] { 
         cursor: pointer !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: transparent !important; 
@@ -86,42 +87,42 @@ st.markdown("""
     }
     /* 將選單樣式綁定在文字容器上 */
     [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:last-child {
-        color: var(--text-secondary) !important; font-size: 14px !important; font-weight: 500 !important;
-        padding: 10px 16px !important; border-radius: 8px !important; margin: 2px 0 !important;
+        color: var(--text-secondary) !important; font-size: 16px !important; font-weight: 600 !important;
+        padding: 12px 18px !important; border-radius: 8px !important; margin: 2px 0 !important;
         transition: all 0.15s ease !important; display: block !important; width: 100% !important;
-        border-left: 3px solid transparent !important; background: transparent !important;
+        border-left: 4px solid transparent !important; background: transparent !important;
     }
     [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"]:hover > div:last-child { 
         background: var(--bg-hover) !important; color: var(--text-primary) !important; 
     }
     [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"][aria-checked="true"] > div:last-child {
         background: rgba(59,111,232,0.08) !important; color: var(--accent-blue) !important;
-        border-left: 3px solid var(--accent-blue) !important; font-weight: 700 !important; padding-left: 13px !important;
+        border-left: 4px solid var(--accent-blue) !important; font-weight: 800 !important; padding-left: 14px !important;
     }
 
     /* Logo 區 */
     .sidebar-logo { background: linear-gradient(135deg, #EBF0FF 0%, #F7F8FC 100%); padding: 28px 20px 22px; border-bottom: 1px solid var(--border); text-align: center; }
-    .sidebar-logo-icon { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 10px rgba(59,111,232,0.25)); }
-    .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 12px 0 4px 0; }
-    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-logo-icon { font-size: 48px; line-height: 1; filter: drop-shadow(0 0 10px rgba(59,111,232,0.25)); }
+    .sidebar-logo-title { color: var(--text-primary); font-size: 22px; font-weight: 800; letter-spacing: 3px; margin: 14px 0 6px 0; }
+    .sidebar-logo-sub { color: var(--text-muted); font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
 
     /* ===== 原生容器卡片統一風格 (取代之前的假卡片) ===== */
     [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stForm"] {
         background-color: var(--bg-surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
-        padding: 20px !important;
+        padding: 24px !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        margin-bottom: 16px !important;
+        margin-bottom: 18px !important;
     }
 
     /* ===== 巢狀原生容器 (評分項目列) 的特殊樣式，修復幽靈空白條 ===== */
     [data-testid="stForm"] [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: var(--bg-elevated) !important;
-        padding: 12px 16px !important;
+        padding: 14px 18px !important;
         border-radius: 8px !important;
         box-shadow: none !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 10px !important;
         border: 1px solid var(--border) !important;
     }
     /* 取消 Streamlit 原生 columns 的多餘外距，保持緊湊 */
@@ -132,88 +133,95 @@ st.markdown("""
 
     /* ===== 頁面大標題 ===== */
     .page-header-inner {
-        display: flex; align-items: center; gap: 20px;
-        padding: 22px 28px 22px 34px;
+        display: flex; align-items: center; gap: 24px;
+        padding: 26px 32px 26px 38px;
         background: var(--bg-surface); border: 1px solid var(--border);
         border-radius: 16px; box-shadow: 0 2px 12px rgba(59,111,232,0.06);
-        position: relative; margin-bottom: 24px; overflow: hidden;
+        position: relative; margin-bottom: 28px; overflow: hidden;
     }
     .page-header-inner::before {
-        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
         background: linear-gradient(180deg, var(--accent-blue) 0%, var(--accent-teal) 100%);
         border-radius: 16px 0 0 16px;
     }
     .page-header-icon-wrap {
-        width: 54px; height: 54px; flex-shrink: 0;
+        width: 64px; height: 64px; flex-shrink: 0;
         background: linear-gradient(135deg, rgba(59,111,232,0.10) 0%, rgba(14,175,160,0.07) 100%);
-        border: 1px solid rgba(59,111,232,0.16); border-radius: 14px;
-        display: flex; align-items: center; justify-content: center; font-size: 28px;
+        border: 1px solid rgba(59,111,232,0.16); border-radius: 16px;
+        display: flex; align-items: center; justify-content: center; font-size: 32px;
     }
-    .page-header-text h2 { margin: 0 0 5px 0; color: var(--text-primary); font-size: 22px; font-weight: 800; line-height: 1.2; }
-    .page-header-text p { margin: 0; color: var(--text-muted); font-size: 13px; }
+    .page-header-text h2 { margin: 0 0 6px 0; color: var(--text-primary); font-size: 26px; font-weight: 900; line-height: 1.2; }
+    .page-header-text p { margin: 0; color: var(--text-muted); font-size: 15px; }
 
     /* ===== 步驟標籤 (負邊距，完美吃掉頂部空白) ===== */
     .section-label {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 15px; font-weight: 800;
+        display: flex; align-items: center; gap: 12px;
+        font-size: 18px; font-weight: 800;
         color: var(--text-primary); letter-spacing: 1px;
-        margin: -10px 0 20px 0; /* 這裡把標題往上拉，填補空隙 */
-        padding-bottom: 12px;
+        margin: -10px 0 24px 0; /* 這裡把標題往上拉，填補空隙 */
+        padding-bottom: 14px;
         border-bottom: 2px solid var(--bg-hover);
     }
     .section-label span {
         display: inline-flex; align-items: center; justify-content: center;
-        width: 24px; height: 24px; background: var(--accent-blue);
-        border-radius: 6px; font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
+        width: 28px; height: 28px; background: var(--accent-blue);
+        border-radius: 8px; font-size: 14px; font-weight: 900; color: white; flex-shrink: 0;
     }
 
     /* ===== 評分區塊標題 ===== */
-    .score-section-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-radius: 10px; margin: 0 0 14px 0; border: 1px solid; }
+    .score-section-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-radius: 12px; margin: 0 0 16px 0; border: 1px solid; }
     .ssh-a { background: rgba(14,175,160,0.05); border-color: rgba(14,175,160,0.22) !important; }
     .ssh-b { background: rgba(59,111,232,0.05); border-color: rgba(59,111,232,0.22) !important; }
     .ssh-c { background: rgba(212,130,10,0.05); border-color: rgba(212,130,10,0.22) !important; }
-    .ssh-title { font-weight: 800; font-size: 13px; }
+    .ssh-title { font-weight: 900; font-size: 16px; }
     .ssh-title-a { color: var(--accent-teal); }
     .ssh-title-b { color: var(--accent-blue); }
     .ssh-title-c { color: var(--accent-amber); }
-    .ssh-badge { font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 20px; font-family: 'DM Mono', monospace; }
+    .ssh-badge { font-size: 13px; font-weight: 800; padding: 4px 14px; border-radius: 20px; font-family: 'DM Mono', monospace; }
     .ssh-badge-a { background: rgba(14,175,160,0.11); color: var(--accent-teal); }
     .ssh-badge-b { background: rgba(59,111,232,0.11); color: var(--accent-blue); }
     .ssh-badge-c { background: rgba(212,130,10,0.11); color: var(--accent-amber); }
 
     /* ===== 評分項目內部文字 ===== */
-    .score-title-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .score-title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
-    .score-weight { font-size: 11px; color: var(--accent-blue); background: rgba(59,111,232,0.1); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; }
-    .score-help { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-    .score-help-warn { font-size: 11px; color: #D4820A; background: rgba(212,130,10,0.08); padding: 3px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+    .score-title-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .score-title { font-weight: 800; font-size: 16px; color: var(--text-primary); }
+    .score-weight { font-size: 13px; color: var(--accent-blue); background: rgba(59,111,232,0.1); padding: 3px 8px; border-radius: 6px; font-family: 'DM Mono', monospace; font-weight: 700; }
+    .score-help { font-size: 13px; color: var(--text-muted); line-height: 1.5; font-weight: 500; }
+    .score-help-warn { font-size: 13px; color: #D4820A; background: rgba(212,130,10,0.08); padding: 4px 10px; border-radius: 6px; display: inline-block; margin-top: 5px; font-weight: 600; }
 
     /* ===== 結果看板 ===== */
-    .result-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px; text-align: center; height: 100%; }
-    .result-score-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-    .result-score-value { font-size: 56px; font-weight: 900; color: var(--text-primary); line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 14px; }
-    .result-grade-badge { display: inline-block; padding: 6px 20px; border-radius: 24px; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .result-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px 24px; text-align: center; height: 100%; }
+    .result-score-label { font-size: 14px; font-weight: 800; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+    .result-score-value { font-size: 64px; font-weight: 900; color: var(--text-primary); line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 16px; }
+    .result-grade-badge { display: inline-block; padding: 8px 24px; border-radius: 24px; font-size: 18px; font-weight: 800; margin-bottom: 12px; }
 
     /* ===== 歷史卡片 ===== */
-    .history-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
-    .history-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .history-card-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-    .history-card-dept { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
-    .history-card-score { font-size: 28px; font-weight: 900; color: var(--text-primary); font-family: 'DM Mono', monospace; }
+    .history-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .history-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .history-card-name { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+    .history-card-dept { font-size: 13px; font-weight: 600; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; }
+    .history-card-score { font-size: 32px; font-weight: 900; color: var(--text-primary); font-family: 'DM Mono', monospace; }
 
-    /* ===== Streamlit 輸入元件覆蓋 ===== */
+    /* ===== Streamlit 輸入元件覆蓋 (全面加大) ===== */
     .stTextInput input, .stNumberInput input, .stTextArea textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stDateInput"] input { 
         background-color: var(--bg-elevated) !important; 
         border: 1px solid var(--border) !important; 
-        border-radius: 8px !important; color: var(--text-primary) !important; font-size: 14px !important; 
+        border-radius: 8px !important; color: var(--text-primary) !important; 
+        font-size: 16px !important; 
+        padding: 10px 14px !important;
     }
     .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus { border-color: var(--accent-blue) !important; box-shadow: 0 0 0 3px rgba(59,111,232,0.10) !important; }
-    .stButton > button { background: var(--bg-surface) !important; border: 1px solid var(--border-light) !important; color: var(--text-secondary) !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 13px !important; transition: all 0.15s !important; }
+    .stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label, .stDateInput label { 
+        font-size: 15px !important; font-weight: 800 !important; color: var(--text-secondary) !important; margin-bottom: 6px !important;
+    }
+    .stButton > button { background: var(--bg-surface) !important; border: 1px solid var(--border-light) !important; color: var(--text-secondary) !important; border-radius: 10px !important; font-weight: 700 !important; font-size: 15px !important; padding: 10px 16px !important; transition: all 0.15s !important; }
     .stButton > button:hover { background: var(--bg-hover) !important; border-color: var(--accent-blue) !important; color: var(--text-primary) !important; }
     .stButton > button[kind="primary"] { background: var(--accent-blue) !important; border-color: var(--accent-blue) !important; color: white !important; }
-    .stFormSubmitButton > button { background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important; border: none !important; color: white !important; font-size: 15px !important; font-weight: 700 !important; padding: 14px !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important; width: 100% !important; margin-top: 10px; }
+    .stFormSubmitButton > button { background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-violet) 100%) !important; border: none !important; color: white !important; font-size: 18px !important; font-weight: 800 !important; padding: 16px !important; border-radius: 12px !important; box-shadow: 0 4px 14px rgba(59,111,232,0.25) !important; width: 100% !important; margin-top: 14px; }
     
-    .system-footer { text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 12px; margin-top: 40px; border-top: 1px solid var(--border); }
+    .stCaption, small { font-size: 14px !important; color: var(--text-muted) !important; font-weight: 500 !important;}
+    
+    .system-footer { text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 14px; margin-top: 40px; border-top: 1px solid var(--border); font-weight: 500; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -367,7 +375,7 @@ DEPT_LIST  = list(st.session_state.config_data.keys())
 with st.sidebar:
     lc = st.session_state.logo_config
     if lc["use_image"] and lc["image_b64"]:
-        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:72px;height:72px;object-fit:contain;border-radius:12px;">'
+        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:80px;height:80px;object-fit:contain;border-radius:14px;">'
     else:
         logo_html = f'<div class="sidebar-logo-icon">{lc["emoji"]}</div>'
 
@@ -426,18 +434,18 @@ if menu == "📝 新增評核":
 
         with st.container(border=True):
             st.markdown('<div class="section-label"><span>2</span>職務目標設定</div>', unsafe_allow_html=True)
-            st.markdown('<div style="font-size:12px;font-weight:700;color:#0EAFA0;margin-bottom:10px;">▸ A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:15px;font-weight:800;color:#0EAFA0;margin-bottom:12px;">▸ A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
             for i, row in enumerate(current_config['text_a']):
                 st.text_area(
-                    row['title'], value=row['content'], height=80,
+                    row['title'], value=row['content'], height=90,
                     key=f"t_a_{input_dept}_{i}",
                     on_change=update_target_content,
                     args=(input_dept, 'text_a', i, f"t_a_{input_dept}_{i}")
                 )
-            st.markdown('<div style="font-size:12px;font-weight:700;color:#3B6FE8;margin:14px 0 10px;">▸ B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:15px;font-weight:800;color:#3B6FE8;margin:18px 0 12px;">▸ B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
             for i, row in enumerate(current_config['text_b']):
                 st.text_area(
-                    row['title'], value=row['content'], height=80,
+                    row['title'], value=row['content'], height=90,
                     key=f"t_b_{input_dept}_{i}",
                     on_change=update_target_content,
                     args=(input_dept, 'text_b', i, f"t_b_{input_dept}_{i}")
@@ -461,7 +469,6 @@ if menu == "📝 新增評核":
             for i, row in enumerate(current_config['basic']):
                 is_warn = '法遵' in row.get('help', '')
                 
-                # YES.md Fix: 取代錯誤的 div 包裝，改用 Streamlit 原生 Container 修復空白條問題
                 with st.container(border=True):
                     c_lbl, c_val = st.columns([2.5, 1])
                     with c_lbl:
@@ -530,7 +537,7 @@ if menu == "📝 新增評核":
                 c_mgr_score = st.selectbox("給分", options=range(1, 11), index=7, label_visibility="collapsed")
             with col_c2:
                 st.caption("主管反饋建議（必填）")
-                c_mgr_comment = st.text_area("反饋", placeholder="請輸入評價與改善建議...", height=100, label_visibility="collapsed")
+                c_mgr_comment = st.text_area("反饋", placeholder="請輸入評價與改善建議...", height=110, label_visibility="collapsed")
 
             st.write("")
             submitted = st.form_submit_button("⚖ 執行計算並鎖定分數", use_container_width=True)
@@ -576,7 +583,7 @@ if menu == "📝 新增評核":
                         <div class="result-score-label">最終核定總分</div>
                         <div class="result-score-value">{res['score']:.2f}</div>
                         <div class="result-grade-badge" style="background:{grade_c}22;color:{grade_c};border:1px solid {grade_c}44;">{grade_t}</div>
-                        <div style="font-size:13px;color:var(--text-muted);">建議核發獎金 <strong style="color:var(--text-primary);font-size:16px;">{grade_m}</strong> 個月</div>
+                        <div style="font-size:15px;color:var(--text-muted);font-weight:600;">建議核發獎金 <strong style="color:var(--text-primary);font-size:20px;">{grade_m}</strong> 個月</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -632,7 +639,7 @@ elif menu == "📋 雲端紀錄":
 
     if st.session_state.batch_queue:
         with st.container(border=True):
-            st.markdown('<div class="section-label"><span>↑</span>上傳緩衝區</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-label" style="margin-top:0;"><span>↑</span>上傳緩衝區</div>', unsafe_allow_html=True)
             st.dataframe(
                 pd.DataFrame(st.session_state.batch_queue)[['受評姓名', '部門', '總分', '評等', '實得獎金']],
                 hide_index=True, use_container_width=True
@@ -675,7 +682,7 @@ elif menu == "📋 雲端紀錄":
                         st.rerun()
 
     with st.container(border=True):
-        st.markdown('<div class="section-label"><span>◈</span>歷史資料檢視</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label" style="margin-top:0;"><span>◈</span>歷史資料檢視</div>', unsafe_allow_html=True)
 
         if st.session_state.cloud_data_cache is not None and not st.session_state.cloud_data_cache.empty:
             df = st.session_state.cloud_data_cache
@@ -719,12 +726,12 @@ elif menu == "📋 雲端紀錄":
                         </div>
                         <div>
                             <span class="history-card-score">{score_val}</span>
-                            <span style="color:{rule_color};background:{rule_color}11;padding:2px 8px;border-radius:10px;font-size:12px;">{grade_val}</span>
+                            <span style="color:{rule_color};background:{rule_color}11;padding:3px 10px;border-radius:10px;font-size:14px;font-weight:700;">{grade_val}</span>
                         </div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                        <div style="font-size:13px;color:var(--text-muted);margin-top:10px;font-weight:500;">
                             主管：{row.get('評分主管', '')} &nbsp;|&nbsp; 日期：{row.get('評分日期', '')}
                         </div>
-                        <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">"{comment_preview}"</div>
+                        <div style="font-size:14px;color:var(--text-secondary);margin-top:8px;">"{comment_preview}"</div>
                     </div>
                     """, unsafe_allow_html=True)
                     with st.expander("查看詳情"):
@@ -778,11 +785,11 @@ elif menu == "⚙️ 參數設定":
             nw_c = col_w3.number_input("C區權重 (主管)", value=conf['section_weights'][2], step=0.05)
             st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
 
-            st.markdown('<div style="font-size:14px;color:#0EAFA0;font-weight:700;margin:20px 0 8px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:16px;color:#0EAFA0;font-weight:800;margin:24px 0 10px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
             ed_a = st.data_editor(pd.DataFrame(conf['basic']),     num_rows="dynamic", use_container_width=True, key=f"edit_a_{edit_dept}")
             st.session_state.config_data[edit_dept]['basic'] = ed_a.to_dict('records')
 
-            st.markdown('<div style="font-size:14px;color:#3B6FE8;font-weight:700;margin:20px 0 8px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:16px;color:#3B6FE8;font-weight:800;margin:24px 0 10px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
             ed_b = st.data_editor(pd.DataFrame(conf['excellent']), num_rows="dynamic", use_container_width=True, key=f"edit_b_{edit_dept}")
             st.session_state.config_data[edit_dept]['excellent'] = ed_b.to_dict('records')
 
@@ -804,7 +811,7 @@ elif menu == "⚙️ 參數設定":
                     st.session_state.logo_config["use_image"] = True
                     st.success("✅ 圖片已上傳，儲存後生效")
                 if lc["use_image"] and lc["image_b64"]:
-                    st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:80px;height:80px;object-fit:contain;border-radius:12px;border:1px solid #DDE1EE;margin-top:8px;">', unsafe_allow_html=True)
+                    st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:90px;height:90px;object-fit:contain;border-radius:14px;border:1px solid #DDE1EE;margin-top:10px;">', unsafe_allow_html=True)
                     if st.button("🗑 移除圖片，改用 Emoji"):
                         st.session_state.logo_config["use_image"] = False
                         st.session_state.logo_config["image_b64"] = None
@@ -822,6 +829,6 @@ elif menu == "⚙️ 參數設定":
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v40.0 - 原生 DOM 重構與無縫排版版</p>
+    <p style="font-size:12px; font-weight:600;">系統版本 v40.1 - 閱讀舒適放大版</p>
 </div>
 """, unsafe_allow_html=True)
