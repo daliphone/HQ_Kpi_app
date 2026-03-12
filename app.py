@@ -13,6 +13,7 @@ except ImportError:
     HAS_GSHEETS = False
 
 # --- 1. 頁面設定 ---
+# YES.md Note: initial_sidebar_state="expanded" 已設定，大螢幕預設展開。小螢幕強制收合為 Streamlit 原生保護機制。
 st.set_page_config(
     page_title="馬尼通訊 | 人員評核系統",
     page_icon="💠",
@@ -43,18 +44,46 @@ st.markdown("""
         --accent-violet: #6C4FD4;
     }
 
-    /* ===== 主體背景與溫和字體繼承 (修復淺灰英文 Icon 問題) ===== */
+    /* ===== 主體背景與溫和字體繼承 ===== */
     html, body, [class*="css"] {
         font-family: 'Noto Sans TC', sans-serif;
     }
     .stApp { background-color: var(--bg-base) !important; color: var(--text-primary); }
 
     /* 保護 Material Icons 不被中文字體覆寫 */
-    .material-icons, [data-testid="collapsedControl"] svg, .st-emotion-cache-1bz1hzt svg {
+    .material-icons, .st-emotion-cache-1bz1hzt svg {
         font-family: 'Material Icons' !important;
     }
 
-    /* ===== 安全隱藏不需要的元件，保留展開按鈕 ===== */
+    /* ===== 終極修復：強制召回並美化左上角展開小箭頭 (浮島按鈕設計) ===== */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 999999 !important;
+        background-color: var(--bg-surface) !important;
+        border: 1px solid var(--accent-blue) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(59,111,232,0.2) !important;
+        left: 15px !important;
+        top: 15px !important;
+        padding: 4px !important;
+        transition: all 0.2s ease !important;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background-color: var(--bg-hover) !important;
+        transform: scale(1.05) !important;
+    }
+    /* 強制隔離字體，避免 Icon 退化成英文單字 */
+    [data-testid="collapsedControl"] * {
+        font-family: 'Material Icons' !important;
+        color: var(--accent-blue) !important;
+        fill: var(--accent-blue) !important;
+    }
+
+    /* ===== 安全隱藏不需要的元件 ===== */
     .stDeployButton { display: none !important; }
     #MainMenu { display: none !important; }
     [data-testid="stHeader"] { background-color: transparent !important; }
@@ -74,7 +103,7 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] hr { border-color: var(--border) !important; margin: 12px 0 16px 0; }
     
-    /* ===== 側邊欄 Radio 導航完美版 (保留點擊事件 + 隱藏原生圓點) ===== */
+    /* ===== 側邊欄 Radio 導航完美版 ===== */
     [data-testid="stSidebar"] .stRadio [role="radiogroup"] { 
         background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 12px !important; gap: 4px !important; 
     }
@@ -142,7 +171,6 @@ st.markdown("""
         display: flex; align-items: center; gap: 10px;
         font-size: 15px; font-weight: 800;
         color: var(--text-primary); letter-spacing: 1px;
-        /* 負的 margin-top 吃掉容器預設的 padding */
         margin: -8px 0 20px 0; 
         padding-bottom: 12px;
         border-bottom: 2px solid var(--bg-hover);
@@ -398,7 +426,6 @@ if menu == "📝 新增評核":
     col_l, col_r = st.columns([1.15, 2], gap="large")
 
     with col_l:
-        # YES.md Fix: 標題置入卡片內，負邊距吃掉空白
         with st.container(border=True):
             st.markdown('<div class="section-label"><span>1</span>基本資料</div>', unsafe_allow_html=True)
             input_name       = st.text_input("受評人姓名", placeholder="輸入姓名...")
@@ -809,6 +836,6 @@ elif menu == "⚙️ 參數設定":
 st.markdown("""
 <div class="system-footer">
     <p>馬尼行動通訊總管理處 | 數位化管理系統 © 2026</p>
-    <p style="font-size:10px;">系統版本 v38.0 - YES.md 字體圖示修復版</p>
+    <p style="font-size:10px;">系統版本 v39.0 - UI 護城河與浮島按鈕防護版</p>
 </div>
 """, unsafe_allow_html=True)
