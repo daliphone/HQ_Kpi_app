@@ -20,238 +20,343 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS：Pro Max 莫蘭迪現代設計系統 (Morandi Design System) ---
+# --- 2. CSS：明亮莫蘭迪設計系統 (Light Morandi Design System) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap');
-    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
     :root {
-        /* 莫蘭迪溫和中性背景色 */
-        --bg-base:       #F2F4F6;
-        --bg-surface:    #FFFFFF;
-        --bg-elevated:   #FAFBFC;
-        --bg-hover:      #EAECEF;
-        --border:        #E1E4E8;
-        --border-light:  #EDEFF2;
-        
-        /* 降低對比度的舒適文字色 */
-        --text-primary:  #343A40;
-        --text-secondary:#5C6370;
-        --text-muted:    #8B949E;
-        
-        /* 莫蘭迪主色調 (低飽和度，久看不累) */
-        --accent-blue:   #7A8B99; /* 灰藍色 */
-        --accent-teal:   #829D96; /* 灰綠色 */
-        --accent-amber:  #BCA87F; /* 燕麥奶黃 */
-        --accent-rose:   #B58B8F; /* 灰粉色 */
-        --accent-violet: #8C849E; /* 灰紫色 */
+        /* 明亮中性底色 */
+        --bg-base:        #F5F7FA;
+        --bg-surface:     #FFFFFF;
+        --bg-elevated:    #F7F9FC;
+        --bg-hover:       #EEF1F6;
+        --border:         #E2E6EE;
+        --border-light:   #ECEEF3;
+
+        /* 高對比文字色 */
+        --text-primary:   #2D3340;
+        --text-secondary: #5A6375;
+        --text-muted:     #9AA3B2;
+
+        /* 明亮莫蘭迪主色 (低飽和度，明亮清晰) */
+        --accent-blue:    #5B77CC;
+        --accent-teal:    #3D9C80;
+        --accent-amber:   #C49A35;
+        --accent-rose:    #C47080;
+        --accent-violet:  #7A6DBE;
+
+        /* 三區區塊色 */
+        --zone-a-bg:      #EEF2FF;
+        --zone-a-border:  #C4CAEA;
+        --zone-a-text:    #3D5299;
+        --zone-b-bg:      #EDF7F4;
+        --zone-b-border:  #B0DDD0;
+        --zone-b-text:    #2E7A64;
+        --zone-c-bg:      #FDF6EC;
+        --zone-c-border:  #EDD890;
+        --zone-c-text:    #8A6020;
+
+        /* 法遵警示色 */
+        --warn-bg:        #FDF0F0;
+        --warn-text:      #B05050;
+        --warn-border:    #F0C4C4;
     }
 
     /* ===== 全域字體與背景 ===== */
     html, body, [class*="css"] {
-        font-family: 'Noto Sans TC', sans-serif;
+        font-family: 'Noto Sans TC', sans-serif !important;
         font-size: 16px !important;
         background-color: var(--bg-base) !important;
+        color: var(--text-primary) !important;
     }
-    .stApp { background-color: var(--bg-base) !important; color: var(--text-primary); }
-
-    /* 保護 Icon 不被覆寫 */
-    .material-icons, .st-emotion-cache-1bz1hzt svg, [data-testid="collapsedControl"] svg {
-        font-family: 'Material Icons' !important;
-    }
+    .stApp { background-color: var(--bg-base) !important; color: var(--text-primary) !important; }
 
     /* 隱藏原生多餘元件 */
     .stDeployButton, [data-testid="stMainMenu"] { display: none !important; }
     [data-testid="stHeader"] { background-color: transparent !important; }
 
-    /* ===== 主容器留白 (增加呼吸空間) ===== */
+    /* ===== 主容器留白 ===== */
     .block-container {
         padding-top: 2.5rem !important;
         padding-bottom: 4rem !important;
-        max-width: 92%; /* 讓兩側稍微內縮，聚焦視覺 */
+        max-width: 92%;
     }
 
-    /* ===== 側邊欄：乾淨、無框線、微陰影 ===== */
+    /* ===== 側邊欄 ===== */
     section[data-testid="stSidebar"] {
         background-color: var(--bg-surface) !important;
-        border-right: none !important;
-        box-shadow: 2px 0 20px rgba(0,0,0,0.03) !important;
+        border-right: 1px solid var(--border-light) !important;
+        box-shadow: 2px 0 16px rgba(0,0,0,0.04) !important;
     }
     section[data-testid="stSidebar"] hr { border-color: var(--border-light) !important; margin: 16px 0; }
-    
-    /* ===== 側邊欄 Radio 導航 (柔和 Hover 狀態) ===== */
-    [data-testid="stSidebar"] .stRadio [role="radiogroup"] { 
-        background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 16px !important; gap: 8px !important; 
+
+    /* ===== 側邊欄 Radio 導航 ===== */
+    [data-testid="stSidebar"] .stRadio [role="radiogroup"] {
+        background: transparent !important; border: none !important;
+        box-shadow: none !important; padding: 0 12px !important; gap: 4px !important;
     }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] { 
-        cursor: pointer !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: transparent !important; 
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] {
+        cursor: pointer !important; width: 100% !important;
+        margin: 0 !important; padding: 0 !important; background: transparent !important;
     }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child { 
-        position: absolute !important; opacity: 0 !important; width: 0 !important; height: 0 !important; overflow: hidden !important;
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child {
+        position: absolute !important; opacity: 0 !important;
+        width: 0 !important; height: 0 !important; overflow: hidden !important;
     }
     [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:last-child {
-        color: var(--text-secondary) !important; font-size: 15px !important; font-weight: 600 !important;
-        padding: 14px 20px !important; border-radius: 12px !important; margin: 2px 0 !important;
+        color: var(--text-secondary) !important; font-size: 14px !important; font-weight: 600 !important;
+        padding: 12px 16px !important; border-radius: 10px !important; margin: 2px 0 !important;
         transition: all 0.2s ease !important; display: block !important; width: 100% !important;
-        border-left: 4px solid transparent !important; background: transparent !important;
+        border-left: 3px solid transparent !important; background: transparent !important;
     }
-    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"]:hover > div:last-child { 
-        background: var(--bg-hover) !important; color: var(--text-primary) !important; 
-        transform: translateX(4px); /* 滑鼠懸停微動效 */
+    [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"]:hover > div:last-child {
+        background: #EEF2FF !important; color: var(--accent-blue) !important;
     }
     [data-testid="stSidebar"] .stRadio label[data-baseweb="radio"][aria-checked="true"] > div:last-child {
         background: var(--text-primary) !important; color: #FFFFFF !important;
-        border-left: 4px solid var(--accent-blue) !important; font-weight: 700 !important; 
-        box-shadow: 0 4px 12px rgba(52, 58, 64, 0.15) !important;
+        border-left: 3px solid var(--accent-blue) !important; font-weight: 700 !important;
+        box-shadow: 0 4px 12px rgba(45, 51, 64, 0.15) !important;
     }
 
     /* ===== Logo 區 ===== */
-    .sidebar-logo { padding: 36px 20px 24px; text-align: center; border-bottom: 1px solid var(--border-light); }
-    .sidebar-logo-icon { font-size: 42px; line-height: 1; filter: grayscale(20%); opacity: 0.9; }
-    .sidebar-logo-title { color: var(--text-primary); font-size: 20px; font-weight: 800; letter-spacing: 2px; margin: 16px 0 4px 0; }
-    .sidebar-logo-sub { color: var(--text-muted); font-size: 12px; letter-spacing: 1px; }
+    .sidebar-logo { padding: 32px 20px 20px; text-align: center; border-bottom: 1px solid var(--border-light); }
+    .sidebar-logo-icon { font-size: 38px; line-height: 1; }
+    .sidebar-logo-title { color: var(--text-primary); font-size: 18px; font-weight: 800; letter-spacing: 2px; margin: 12px 0 4px 0; }
+    .sidebar-logo-sub { color: var(--text-muted); font-size: 11px; letter-spacing: 0.5px; }
 
-    /* ===== 原生容器卡片統一風格 (Pro Max 陰影與圓角) ===== */
+    /* ===== 卡片容器 ===== */
     [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stForm"] {
         background-color: var(--bg-surface) !important;
-        border: 1px solid var(--border-light) !important;
-        border-radius: 16px !important;
-        padding: 28px !important;
-        box-shadow: 0 6px 24px rgba(0,0,0,0.03) !important;
-        margin-bottom: 24px !important;
-        transition: box-shadow 0.3s ease !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
+        padding: 24px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
+        margin-bottom: 20px !important;
+        transition: box-shadow 0.2s ease !important;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover, [data-testid="stForm"]:hover {
-        box-shadow: 0 8px 32px rgba(0,0,0,0.06) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.07) !important;
     }
 
-    /* 巢狀容器 (評分項目列) */
+    /* 巢狀評分項目列 */
     [data-testid="stForm"] [data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: var(--bg-surface) !important;
-        padding: 16px 20px !important;
-        border-radius: 12px !important;
+        background-color: var(--bg-elevated) !important;
+        padding: 14px 18px !important;
+        border-radius: 10px !important;
         box-shadow: none !important;
-        margin-bottom: 12px !important;
+        margin-bottom: 10px !important;
         border: 1px solid var(--border) !important;
     }
     [data-testid="stForm"] [data-testid="stVerticalBlockBorderWrapper"]:hover {
         border-color: var(--accent-blue) !important;
+        background-color: #FAFBFF !important;
     }
     [data-testid="stForm"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] {
         padding-top: 0 !important; padding-bottom: 0 !important;
     }
 
-    /* ===== 頁面大標題 (乾淨俐落風格) ===== */
+    /* ===== 頁面大標題 ===== */
     .page-header-inner {
-        display: flex; align-items: center; gap: 20px;
-        padding: 0 0 24px 0; margin-bottom: 32px;
+        display: flex; align-items: center; gap: 18px;
+        padding: 0 0 20px 0; margin-bottom: 28px;
         border-bottom: 1px solid var(--border);
     }
     .page-header-icon-wrap {
-        width: 56px; height: 56px; flex-shrink: 0;
+        width: 52px; height: 52px; flex-shrink: 0;
         background: var(--bg-surface);
-        border: 1px solid var(--border); border-radius: 14px;
-        display: flex; align-items: center; justify-content: center; font-size: 28px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border: 1px solid var(--border); border-radius: 13px;
+        display: flex; align-items: center; justify-content: center; font-size: 26px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .page-header-text h2 { margin: 0 0 4px 0; color: var(--text-primary); font-size: 28px; font-weight: 800; letter-spacing: 0.5px; }
-    .page-header-text p { margin: 0; color: var(--text-muted); font-size: 15px; }
+    .page-header-text h2 { margin: 0 0 4px 0; color: var(--text-primary); font-size: 26px; font-weight: 800; }
+    .page-header-text p  { margin: 0; color: var(--text-muted); font-size: 14px; }
 
     /* ===== 步驟標籤 ===== */
     .section-label {
-        display: flex; align-items: center; gap: 12px;
-        font-size: 18px; font-weight: 800; color: var(--text-primary);
-        margin: -10px 0 24px 0; padding-bottom: 16px; border-bottom: 1px dashed var(--border);
+        display: flex; align-items: center; gap: 10px;
+        font-size: 16px; font-weight: 800; color: var(--text-primary);
+        margin: -6px 0 20px 0; padding-bottom: 14px; border-bottom: 1px dashed var(--border);
     }
     .section-label span {
         display: inline-flex; align-items: center; justify-content: center;
-        width: 26px; height: 26px; background: var(--text-primary);
-        border-radius: 8px; font-size: 13px; font-weight: 900; color: white; flex-shrink: 0;
+        width: 24px; height: 24px; background: var(--text-primary);
+        border-radius: 7px; font-size: 12px; font-weight: 900; color: white; flex-shrink: 0;
     }
 
-    /* ===== 評分區塊標題 (莫蘭迪色塊) ===== */
-    .score-section-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-radius: 12px; margin: 0 0 20px 0; border: none; }
-    .ssh-a { background: rgba(122,139,153,0.12); }
-    .ssh-b { background: rgba(130,157,150,0.12); }
-    .ssh-c { background: rgba(188,168,127,0.15); }
-    .ssh-title { font-weight: 800; font-size: 16px; }
-    .ssh-title-a { color: #5B6B78; }
-    .ssh-title-b { color: #637A73; }
-    .ssh-title-c { color: #9B8762; }
-    .ssh-badge { font-size: 13px; font-weight: 800; padding: 6px 16px; border-radius: 20px; font-family: 'DM Mono', monospace; background: #FFFFFF; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .ssh-badge-a { color: #5B6B78; }
-    .ssh-badge-b { color: #637A73; }
-    .ssh-badge-c { color: #9B8762; }
+    /* ===== 評分區塊標題 (三區明亮色) ===== */
+    .score-section-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 20px; border-radius: 10px; margin: 0 0 14px 0;
+    }
+    .ssh-a { background: var(--zone-a-bg); border: 1px solid var(--zone-a-border); }
+    .ssh-b { background: var(--zone-b-bg); border: 1px solid var(--zone-b-border); }
+    .ssh-c { background: var(--zone-c-bg); border: 1px solid var(--zone-c-border); }
+    .ssh-title { font-weight: 800; font-size: 15px; }
+    .ssh-title-a { color: var(--zone-a-text); }
+    .ssh-title-b { color: var(--zone-b-text); }
+    .ssh-title-c { color: var(--zone-c-text); }
+    .ssh-badge {
+        font-size: 12px; font-weight: 800; padding: 5px 14px;
+        border-radius: 20px; font-family: 'DM Mono', monospace;
+        background: #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .ssh-badge-a { color: var(--zone-a-text); }
+    .ssh-badge-b { color: var(--zone-b-text); }
+    .ssh-badge-c { color: var(--zone-c-text); }
 
-    /* ===== 評分項目內部文字 ===== */
-    .score-title-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-    .score-title { font-weight: 700; font-size: 16px; color: var(--text-primary); }
-    .score-weight { font-size: 13px; color: var(--text-secondary); background: var(--bg-hover); padding: 4px 10px; border-radius: 8px; font-family: 'DM Mono', monospace; font-weight: 600; }
-    .score-help { font-size: 13px; color: var(--text-muted); line-height: 1.5; font-weight: 500; }
-    .score-help-warn { font-size: 13px; color: #AB7575; background: rgba(181,139,143,0.12); padding: 6px 12px; border-radius: 8px; display: inline-block; margin-top: 6px; font-weight: 600; }
+    /* ===== 評分項目文字 ===== */
+    .score-title-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .score-title { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+    .score-weight {
+        font-size: 12px; color: var(--accent-blue);
+        background: #EEF2FF; padding: 3px 10px;
+        border-radius: 6px; font-family: 'DM Mono', monospace; font-weight: 700;
+    }
+    .score-help { font-size: 12px; color: var(--text-muted); line-height: 1.5; font-weight: 500; }
+    .score-help-warn {
+        font-size: 12px; color: var(--warn-text);
+        background: var(--warn-bg); border: 1px solid var(--warn-border);
+        padding: 5px 10px; border-radius: 7px;
+        display: inline-block; margin-top: 4px; font-weight: 600;
+    }
 
     /* ===== 結果看板 ===== */
-    .result-panel { background: var(--bg-base); border: 1px dashed var(--border); border-radius: 16px; padding: 40px 24px; text-align: center; height: 100%; transition: all 0.3s ease; }
-    .result-panel:hover { background: var(--bg-surface); box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid var(--border-light); }
-    .result-score-label { font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
-    .result-score-value { font-size: 72px; font-weight: 900; color: var(--text-primary); line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 24px; letter-spacing: -2px;}
-    .result-grade-badge { display: inline-block; padding: 8px 24px; border-radius: 24px; font-size: 18px; font-weight: 800; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .result-panel {
+        background: var(--bg-elevated); border: 1px dashed var(--border);
+        border-radius: 14px; padding: 36px 20px; text-align: center;
+        transition: all 0.2s ease;
+    }
+    .result-panel:hover {
+        background: var(--bg-surface);
+        box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+        border: 1px solid var(--border);
+    }
+    .result-score-label {
+        font-size: 12px; font-weight: 700; color: var(--text-muted);
+        letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .result-score-value {
+        font-size: 68px; font-weight: 900; color: var(--text-primary);
+        line-height: 1; font-family: 'DM Mono', monospace;
+        margin-bottom: 20px; letter-spacing: -2px;
+    }
+    .result-grade-badge {
+        display: inline-block; padding: 7px 22px; border-radius: 22px;
+        font-size: 16px; font-weight: 800; margin-bottom: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
 
     /* ===== 歷史卡片 ===== */
-    .history-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; transition: all 0.2s ease; }
-    .history-card:hover { border-color: var(--accent-blue); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
-    .history-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-    .history-card-name { font-size: 18px; font-weight: 800; color: var(--text-primary); }
-    .history-card-dept { font-size: 13px; font-weight: 600; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; }
-    .history-card-score { font-size: 32px; font-weight: 900; color: var(--text-primary); font-family: 'DM Mono', monospace; }
+    .history-card {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 18px; margin-bottom: 14px;
+        transition: all 0.2s ease;
+    }
+    .history-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 4px 16px rgba(91,119,204,0.08);
+    }
+    .history-card-header {
+        display: flex; justify-content: space-between;
+        align-items: flex-start; margin-bottom: 12px;
+    }
+    .history-card-name { font-size: 17px; font-weight: 800; color: var(--text-primary); }
+    .history-card-dept {
+        font-size: 12px; font-weight: 600; color: var(--text-muted);
+        background: var(--bg-elevated); border: 1px solid var(--border);
+        padding: 3px 10px; border-radius: 7px;
+    }
+    .history-card-score {
+        font-size: 30px; font-weight: 900;
+        color: var(--text-primary); font-family: 'DM Mono', monospace;
+    }
 
-    /* ===== Streamlit 輸入元件覆蓋 (流暢互動) ===== */
-    .stTextInput input, .stNumberInput input, .stTextArea textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stDateInput"] input { 
-        background-color: var(--bg-elevated) !important; 
-        border: 1px solid var(--border) !important; 
-        border-radius: 10px !important; color: var(--text-primary) !important; 
-        font-size: 15px !important; padding: 12px 16px !important;
+    /* ===== Streamlit 輸入元件覆蓋 ===== */
+    .stTextInput input, .stNumberInput input,
+    .stTextArea textarea,
+    [data-testid="stSelectbox"] > div > div,
+    [data-testid="stDateInput"] input {
+        background-color: var(--bg-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 9px !important;
+        color: var(--text-primary) !important;
+        font-size: 14px !important;
+        padding: 11px 14px !important;
         transition: all 0.2s ease !important;
     }
-    .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus, [data-testid="stSelectbox"] > div > div:focus-within { 
-        border-color: var(--accent-blue) !important; 
-        box-shadow: 0 0 0 4px rgba(122,139,153,0.15) !important; 
+    .stTextInput input:focus, .stNumberInput input:focus,
+    .stTextArea textarea:focus,
+    [data-testid="stSelectbox"] > div > div:focus-within {
+        border-color: var(--accent-blue) !important;
+        box-shadow: 0 0 0 3px rgba(91,119,204,0.15) !important;
         background-color: var(--bg-surface) !important;
     }
-    .stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label, .stDateInput label { 
-        font-size: 14px !important; font-weight: 700 !important; color: var(--text-secondary) !important; margin-bottom: 8px !important;
+    .stTextInput label, .stNumberInput label,
+    .stTextArea label, .stSelectbox label, .stDateInput label {
+        font-size: 13px !important; font-weight: 700 !important;
+        color: var(--text-secondary) !important; margin-bottom: 6px !important;
     }
-    
-    /* 按鈕樣式 (圓潤、懸停浮起) */
-    .stButton > button { 
-        background: var(--bg-surface) !important; border: 1px solid var(--border) !important; 
-        color: var(--text-secondary) !important; border-radius: 12px !important; 
-        font-weight: 700 !important; font-size: 15px !important; padding: 12px 20px !important; 
-        transition: all 0.2s ease !important; 
+
+    /* ===== 按鈕 ===== */
+    .stButton > button {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important; font-size: 14px !important;
+        padding: 11px 18px !important;
+        transition: all 0.2s ease !important;
     }
-    .stButton > button:hover { 
-        background: var(--bg-surface) !important; border-color: var(--accent-blue) !important; 
-        color: var(--accent-blue) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
-        transform: translateY(-2px);
+    .stButton > button:hover {
+        border-color: var(--accent-blue) !important;
+        color: var(--accent-blue) !important;
+        background: #EEF2FF !important;
+        box-shadow: 0 3px 10px rgba(91,119,204,0.12) !important;
+        transform: translateY(-1px);
     }
-    .stButton > button[kind="primary"] { background: var(--text-primary) !important; border-color: var(--text-primary) !important; color: white !important; }
-    
-    /* 主計算按鈕 (醒目但不刺眼) */
-    .stFormSubmitButton > button { 
-        background: var(--text-primary) !important; border: none !important; 
-        color: white !important; font-size: 16px !important; font-weight: 700 !important; 
-        padding: 16px !important; border-radius: 14px !important; 
-        box-shadow: 0 8px 20px rgba(52,58,64,0.2) !important; width: 100% !important; margin-top: 20px; 
-        transition: all 0.2s ease !important; letter-spacing: 1px;
+    .stButton > button[kind="primary"] {
+        background: var(--text-primary) !important;
+        border-color: var(--text-primary) !important;
+        color: white !important;
+    }
+
+    /* 主計算按鈕 */
+    .stFormSubmitButton > button {
+        background: var(--text-primary) !important;
+        border: none !important;
+        color: white !important;
+        font-size: 15px !important; font-weight: 700 !important;
+        padding: 15px !important; border-radius: 12px !important;
+        box-shadow: 0 6px 18px rgba(45,51,64,0.18) !important;
+        width: 100% !important; margin-top: 18px;
+        transition: all 0.2s ease !important; letter-spacing: 0.5px;
     }
     .stFormSubmitButton > button:hover {
-        background: #1A1D20 !important; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(52,58,64,0.3) !important;
+        background: #1A1D24 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(45,51,64,0.25) !important;
     }
-    
-    .stCaption, small { font-size: 13px !important; color: var(--text-muted) !important; font-weight: 500 !important;}
-    
-    .system-footer { text-align: center; padding: 40px 0 20px; color: var(--text-muted); font-size: 13px; margin-top: 40px; font-weight: 500; border-top: 1px solid var(--border); }
+
+    .stCaption, small {
+        font-size: 13px !important;
+        color: var(--text-muted) !important;
+        font-weight: 500 !important;
+    }
+
+    /* Info / Warning / Success 訊息 */
+    [data-testid="stAlert"] {
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+    }
+
+    .system-footer {
+        text-align: center; padding: 36px 0 18px;
+        color: var(--text-muted); font-size: 13px;
+        margin-top: 40px; font-weight: 500;
+        border-top: 1px solid var(--border);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -297,12 +402,12 @@ def get_gsheets_connection():
 # --- 4. 初始化資料 ---
 if 'bonus_rules' not in st.session_state:
     st.session_state.bonus_rules = [
-        {"grade": "S (特優)",   "min_score": 90, "months": 1.5, "color": "#B58B8F"},
-        {"grade": "A (優良)",   "min_score": 80, "months": 1.0, "color": "#8C849E"},
-        {"grade": "B+ (甲上)",  "min_score": 75, "months": 0.8, "color": "#7A8B99"},
-        {"grade": "B- (甲)",    "min_score": 70, "months": 0.6, "color": "#829D96"},
-        {"grade": "C (待改善)", "min_score": 60, "months": 0.5, "color": "#BCA87F"},
-        {"grade": "D (不合格)", "min_score": 0,  "months": 0.0, "color": "#8B949E"},
+        {"grade": "S (特優)",   "min_score": 90, "months": 1.5, "color": "#C47080"},
+        {"grade": "A (優良)",   "min_score": 80, "months": 1.0, "color": "#7A6DBE"},
+        {"grade": "B+ (甲上)",  "min_score": 75, "months": 0.8, "color": "#5B77CC"},
+        {"grade": "B- (甲)",    "min_score": 70, "months": 0.6, "color": "#3D9C80"},
+        {"grade": "C (待改善)", "min_score": 60, "months": 0.5, "color": "#C49A35"},
+        {"grade": "D (不合格)", "min_score": 0,  "months": 0.0, "color": "#9AA3B2"},
     ]
 
 if 'config_data' not in st.session_state:
@@ -405,7 +510,7 @@ DEPT_LIST  = list(st.session_state.config_data.keys())
 with st.sidebar:
     lc = st.session_state.logo_config
     if lc["use_image"] and lc["image_b64"]:
-        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:80px;height:80px;object-fit:contain;border-radius:14px;">'
+        logo_html = f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:76px;height:76px;object-fit:contain;border-radius:12px;">'
     else:
         logo_html = f'<div class="sidebar-logo-icon">{lc["emoji"]}</div>'
 
@@ -464,18 +569,18 @@ if menu == "📝 新增評核":
 
         with st.container(border=True):
             st.markdown('<div class="section-label"><span>2</span>職務目標設定</div>', unsafe_allow_html=True)
-            st.markdown('<div style="font-size:15px;font-weight:800;color:var(--accent-teal);margin-bottom:12px;">▸ A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:14px;font-weight:800;color:#2E7A64;margin-bottom:10px;">▸ A. 基礎目標 (KPI)</div>', unsafe_allow_html=True)
             for i, row in enumerate(current_config['text_a']):
                 st.text_area(
-                    row['title'], value=row['content'], height=90,
+                    row['title'], value=row['content'], height=88,
                     key=f"t_a_{input_dept}_{i}",
                     on_change=update_target_content,
                     args=(input_dept, 'text_a', i, f"t_a_{input_dept}_{i}")
                 )
-            st.markdown('<div style="font-size:15px;font-weight:800;color:var(--accent-blue);margin:18px 0 12px;">▸ B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:14px;font-weight:800;color:#3D5299;margin:16px 0 10px;">▸ B. 挑戰目標 (OKR)</div>', unsafe_allow_html=True)
             for i, row in enumerate(current_config['text_b']):
                 st.text_area(
-                    row['title'], value=row['content'], height=90,
+                    row['title'], value=row['content'], height=88,
                     key=f"t_b_{input_dept}_{i}",
                     on_change=update_target_content,
                     args=(input_dept, 'text_b', i, f"t_b_{input_dept}_{i}")
@@ -484,7 +589,7 @@ if menu == "📝 新增評核":
     with col_r:
         wa, wb, wc = current_config['section_weights']
 
-        with st.form("score_form_v40", border=True):
+        with st.form("score_form_v41", border=True):
             st.markdown('<div class="section-label"><span>3</span>績效評分維度</div>', unsafe_allow_html=True)
 
             # ── A 區 ──
@@ -498,7 +603,6 @@ if menu == "📝 新增評核":
             scores_a = []
             for i, row in enumerate(current_config['basic']):
                 is_warn = '法遵' in row.get('help', '')
-                
                 with st.container(border=True):
                     c_lbl, c_val = st.columns([2.5, 1])
                     with c_lbl:
@@ -531,7 +635,6 @@ if menu == "📝 新增評核":
             scores_b = []
             for i, row in enumerate(current_config['excellent']):
                 is_warn = '法遵' in row.get('help', '')
-                
                 with st.container(border=True):
                     c_lbl, c_val = st.columns([2.5, 1])
                     with c_lbl:
@@ -567,7 +670,7 @@ if menu == "📝 新增評核":
                 c_mgr_score = st.selectbox("給分", options=range(1, 11), index=7, label_visibility="collapsed")
             with col_c2:
                 st.caption("主管反饋建議（必填）")
-                c_mgr_comment = st.text_area("反饋", placeholder="請輸入評價與改善建議...", height=110, label_visibility="collapsed")
+                c_mgr_comment = st.text_area("反饋", placeholder="請輸入評價與改善建議...", height=108, label_visibility="collapsed")
 
             st.write("")
             submitted = st.form_submit_button("⚖ 執行計算並鎖定分數", use_container_width=True)
@@ -612,8 +715,8 @@ if menu == "📝 新增評核":
                     <div class="result-panel">
                         <div class="result-score-label">最終核定總分</div>
                         <div class="result-score-value">{res['score']:.2f}</div>
-                        <div class="result-grade-badge" style="background:{grade_c}15;color:{grade_c};border:1px solid {grade_c}40;">{grade_t}</div>
-                        <div style="font-size:15px;color:var(--text-muted);font-weight:600;">建議核發獎金 <strong style="color:var(--text-primary);font-size:22px;">{grade_m}</strong> 個月</div>
+                        <div class="result-grade-badge" style="background:{grade_c}22;color:{grade_c};border:1px solid {grade_c}55;">{grade_t}</div>
+                        <div style="font-size:14px;color:var(--text-muted);font-weight:600;margin-top:6px;">建議核發獎金 <strong style="color:var(--text-primary);font-size:20px;">{grade_m}</strong> 個月</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -740,7 +843,7 @@ elif menu == "📋 雲端紀錄":
             for i, row in df.iterrows():
                 score_val  = row.get('總分', '—')
                 grade_val  = row.get('評等', '')
-                rule_color = "#8B949E"
+                rule_color = "#9AA3B2"
                 for r in st.session_state.bonus_rules:
                     if r['grade'] == grade_val:
                         rule_color = r['color']
@@ -756,12 +859,12 @@ elif menu == "📋 雲端紀錄":
                         </div>
                         <div>
                             <span class="history-card-score">{score_val}</span>
-                            <span style="color:{rule_color};background:{rule_color}1A;padding:4px 12px;border-radius:12px;font-size:14px;font-weight:700;margin-left:8px;border:1px solid {rule_color}33;">{grade_val}</span>
+                            <span style="color:{rule_color};background:{rule_color}20;padding:3px 12px;border-radius:10px;font-size:13px;font-weight:700;margin-left:8px;border:1px solid {rule_color}44;">{grade_val}</span>
                         </div>
-                        <div style="font-size:13px;color:var(--text-muted);margin-top:12px;font-weight:500;">
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:10px;font-weight:500;">
                             主管：{row.get('評分主管', '')} &nbsp;|&nbsp; 日期：{row.get('評分日期', '')}
                         </div>
-                        <div style="font-size:14px;color:var(--text-secondary);margin-top:10px;line-height:1.4;">"{comment_preview}"</div>
+                        <div style="font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;">"{comment_preview}"</div>
                     </div>
                     """, unsafe_allow_html=True)
                     with st.expander("查看詳情"):
@@ -815,11 +918,11 @@ elif menu == "⚙️ 參數設定":
             nw_c = col_w3.number_input("C區權重 (主管)", value=conf['section_weights'][2], step=0.05)
             st.session_state.config_data[edit_dept]['section_weights'] = [nw_a, nw_b, nw_c]
 
-            st.markdown('<div style="font-size:16px;color:var(--accent-teal);font-weight:800;margin:24px 0 10px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:15px;color:#2E7A64;font-weight:800;margin:22px 0 10px;">A 區細項 (KPI 基礎)</div>', unsafe_allow_html=True)
             ed_a = st.data_editor(pd.DataFrame(conf['basic']),     num_rows="dynamic", use_container_width=True, key=f"edit_a_{edit_dept}")
             st.session_state.config_data[edit_dept]['basic'] = ed_a.to_dict('records')
 
-            st.markdown('<div style="font-size:16px;color:var(--accent-blue);font-weight:800;margin:24px 0 10px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:15px;color:#3D5299;font-weight:800;margin:22px 0 10px;">B 區細項 (OKR 挑戰)</div>', unsafe_allow_html=True)
             ed_b = st.data_editor(pd.DataFrame(conf['excellent']), num_rows="dynamic", use_container_width=True, key=f"edit_b_{edit_dept}")
             st.session_state.config_data[edit_dept]['excellent'] = ed_b.to_dict('records')
 
@@ -841,7 +944,7 @@ elif menu == "⚙️ 參數設定":
                     st.session_state.logo_config["use_image"] = True
                     st.success("✅ 圖片已上傳，儲存後生效")
                 if lc["use_image"] and lc["image_b64"]:
-                    st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:90px;height:90px;object-fit:contain;border-radius:14px;border:1px solid var(--border);margin-top:10px;">', unsafe_allow_html=True)
+                    st.markdown(f'<img src="data:image/png;base64,{lc["image_b64"]}" style="width:86px;height:86px;object-fit:contain;border-radius:12px;border:1px solid var(--border);margin-top:10px;">', unsafe_allow_html=True)
                     if st.button("🗑 移除圖片，改用 Emoji"):
                         st.session_state.logo_config["use_image"] = False
                         st.session_state.logo_config["image_b64"] = None
@@ -859,6 +962,6 @@ elif menu == "⚙️ 參數設定":
 st.markdown("""
 <div class="system-footer">
     <p>馬尼通訊 | 數位化管理系統 © 2026</p>
-    <p style="font-size:12px; font-weight:600;">系統版本 v40.2 - Pro Max 莫蘭迪版</p>
+    <p style="font-size:12px; font-weight:600;">系統版本 v41.0 - Light Morandi Edition</p>
 </div>
 """, unsafe_allow_html=True)
